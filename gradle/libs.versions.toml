@@ -10,7 +10,7 @@ micronaut-application = "4.6.2"
 # Plugins
 kotlinter = "5.4.2"
 detekt = "1.23.8"
-shadow = "9.3.1"
+shadow = "9.3.2"
 
 # Libraries
 strikt = "0.35.1"
