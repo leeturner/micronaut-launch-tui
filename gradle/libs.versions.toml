@@ -1,0 +1,53 @@
+[versions]
+# Kotlin
+kotlin = "2.3.10"
+kapt = "2.3.10"
+
+# Micronaut
+micronaut-version = "4.10.2"
+micronaut-application = "4.6.2"
+
+# Plugins
+kotlinter = "5.4.2"
+detekt = "1.23.8"
+shadow = "9.3.1"
+
+# Libraries
+strikt = "0.35.1"
+arrow = "2.2.1.1"
+
+[libraries]
+
+# Micronaut
+micronaut-kotlin-extension-functions = { module = "io.micronaut.kotlin:micronaut-kotlin-extension-functions" }
+micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime" }
+micronaut-picocli = { module = "io.micronaut.picocli:micronaut-picocli" }
+micronaut-serde-processor = { module = "io.micronaut.serde:micronaut-serde-processor" }
+
+# Kotlin
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
+kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+
+# Logging
+logback-classic = { module = "ch.qos.logback:logback-classic" }
+
+# CLI
+picocli = { module = "info.picocli:picocli" }
+picocli-codegen = { module = "info.picocli:picocli-codegen" }
+
+# Arrow
+arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+
+# Testing
+junit-platform-suite = { module = "org.junit.platform:junit-platform-suite-engine" }
+strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
+strikt-arrow = { module = "io.strikt:strikt-arrow", version.ref = "strikt" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
+kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kapt" }
+micronaut-application = { id = "io.micronaut.application", version.ref = "micronaut-application" }
+shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
+kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
