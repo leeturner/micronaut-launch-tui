@@ -1,4 +1,4 @@
-package com.example
+package com.leeturner.mtui
 
 import io.micronaut.configuration.picocli.PicocliRunner
 import picocli.CommandLine.Command
@@ -7,11 +7,11 @@ import java.util.concurrent.Callable
 import kotlin.system.exitProcess
 
 @Command(
-    name = "demo",
+    name = "mtui",
     description = ["..."],
     mixinStandardHelpOptions = true,
 )
-class DemoCommand : Callable<Int> {
+class MtuiCommand : Callable<Int> {
     @Option(names = ["-v", "--verbose"], description = ["..."])
     private var verbose: Boolean = false
 
@@ -24,8 +24,9 @@ class DemoCommand : Callable<Int> {
     }
 
     companion object {
-        @JvmStatic fun main(args: Array<String>) {
-            val exitCode = PicocliRunner.call(DemoCommand::class.java, *args)
+        @JvmStatic
+        fun main(args: Array<String>) {
+            val exitCode = PicocliRunner.call(MtuiCommand::class.java, *args)
             exitProcess(exitCode ?: 0)
         }
     }

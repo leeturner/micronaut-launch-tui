@@ -9,7 +9,7 @@ plugins {
 }
 
 version = "0.1"
-group = "com.example"
+group = "com.leeturner.mtui"
 
 repositories {
     mavenCentral()
@@ -36,7 +36,7 @@ dependencies {
 
 
 application {
-    mainClass = "com.example.DemoCommand"
+    mainClass = "com.leeturner.mtui.DemoCommand"
 }
 java {
     sourceCompatibility = JavaVersion.toVersion("21")
@@ -59,12 +59,10 @@ micronaut {
     testRuntime("junit5")
     processing {
         incremental(true)
-        annotations("com.example.*")
+        annotations("com.leeturner.mtui.*")
     }
 }
 
 tasks.named<io.micronaut.gradle.docker.NativeImageDockerfile>("dockerfileNative") {
     jdkVersion = "21"
 }
-
-

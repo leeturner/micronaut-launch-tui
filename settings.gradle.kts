@@ -1,2 +1,1 @@
-rootProject.name="micronaut-cli-template"
-
+rootProject.name="micronaut-launch-tui"

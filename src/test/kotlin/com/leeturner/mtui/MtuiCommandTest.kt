@@ -1,4 +1,4 @@
-package com.example
+package com.leeturner.mtui
 
 import io.micronaut.configuration.picocli.PicocliRunner
 import io.micronaut.context.ApplicationContext
@@ -11,7 +11,7 @@ import strikt.assertions.isEqualTo
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
-class DemoCommandTest {
+class MtuiCommandTest {
     @Test
     fun testWithCommandLineOption() {
         ApplicationContext.run(CLI, TEST).use { ctx ->
@@ -19,7 +19,7 @@ class DemoCommandTest {
                 System.setOut(PrintStream(baos))
 
                 val args = arrayOf("-v")
-                val exitCode = PicocliRunner.call(DemoCommand::class.java, ctx, *args)
+                val exitCode = PicocliRunner.call(MtuiCommand::class.java, ctx, *args)
 
                 expectThat(exitCode).isEqualTo(0)
                 expectThat(baos.toString()).contains("Hi!")
