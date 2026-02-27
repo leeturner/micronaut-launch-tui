@@ -1,0 +1,997 @@
+openapi: 3.0.1
+info:
+  title: Micronaut Launch
+  description: API for Creating Micronaut Applications
+  license:
+    name: Apache 2.0
+  version: 4.10.9
+paths:
+  /application-types:
+    get:
+      summary: List the application types.
+      description: List the application types.
+      operationId: list
+      responses:
+        "200":
+          description: The types
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationTypeList"
+  /application-types/{type}:
+    get:
+      summary: Get a specific application type.
+      description: Get a specific application type.
+      operationId: getType
+      parameters:
+      - name: type
+        in: path
+        description: The type
+        required: true
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      responses:
+        "200":
+          description: The type
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicationTypeInfo"
+  /application-types/{type}/features:
+    get:
+      summary: List the type features.
+      description: List the type features.
+      operationId: features
+      parameters:
+      - name: type
+        in: path
+        description: The features
+        required: true
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      responses:
+        "200":
+          description: The features
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureList"
+  /create/{type}/{name}:
+    get:
+      summary: "Creates an application, generating a ZIP file as the response."
+      description: "Creates an application, generating a ZIP file as the response."
+      operationId: createApp
+      parameters:
+      - name: type
+        in: path
+        description: The application type The application type
+        required: true
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      - name: name
+        in: path
+        description: The name of the application The name of the application
+        required: true
+        schema:
+          pattern: "[\\w\\d-_\\.]+"
+          type: string
+      - name: features
+        in: query
+        description: The features The chosen features
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            type: string
+      - name: build
+        in: query
+        description: "The build type (optional, defaults to Gradle)"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/BuildTool"
+      - name: test
+        in: query
+        description: "The test framework (optional, defaults to JUnit)"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/TestFramework_1"
+      - name: lang
+        in: query
+        description: "The language (optional, defaults to Java)"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/Language"
+      - name: javaVersion
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/JdkVersion"
+      - name: User-Agent
+        in: header
+        schema:
+          type: string
+          nullable: true
+      responses:
+        "200":
+          description: A ZIP file containing the generated application.
+          content:
+            application/zip: {}
+  /diff/{type}/feature/{feature}:
+    get:
+      summary: Returns a diff for the given application type and feature.
+      description: Returns a diff for the given application type and feature.
+      operationId: diffFeature
+      parameters:
+      - name: type
+        in: path
+        description: The application type
+        required: true
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      - name: name
+        in: query
+        explode: false
+        schema:
+          type: string
+          nullable: true
+      - name: feature
+        in: path
+        description: The feature
+        required: true
+        schema:
+          minLength: 1
+          type: string
+      - name: build
+        in: query
+        description: The build tool
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/BuildTool"
+      - name: test
+        in: query
+        description: The test framework
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/TestFramework"
+      - name: lang
+        in: query
+        description: The lang
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/Language"
+      - name: javaVersion
+        in: query
+        description: The java version
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/JdkVersion"
+      responses:
+        "404":
+          description: If no difference is found
+        "400":
+          description: If the supplied parameters are invalid
+        "200":
+          description: A textual diff
+          content:
+            text/plain: {}
+  /diff/{type}/{name}:
+    get:
+      summary: Diffs the whole application for all selected features.
+      description: Diffs the whole application for all selected features.
+      operationId: diffApp
+      parameters:
+      - name: type
+        in: path
+        description: The application type
+        required: true
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      - name: name
+        in: path
+        description: The name of the application
+        required: true
+        schema:
+          pattern: "[\\w\\d-_\\.]+"
+          type: string
+      - name: features
+        in: query
+        description: The features
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            type: string
+      - name: build
+        in: query
+        description: The build tool
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/BuildTool"
+      - name: test
+        in: query
+        description: The test framework
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/TestFramework"
+      - name: lang
+        in: query
+        description: The lang
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/Language"
+      - name: javaVersion
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/JdkVersion"
+      responses:
+        "404":
+          description: If no difference is found
+        "400":
+          description: If the supplied parameters are invalid
+        "200":
+          description: A textual diff
+          content:
+            text/plain: {}
+  /preview/{type}/{name}:
+    get:
+      summary: Previews the contents of a generated application.
+      description: Previews the contents of a generated application..
+      operationId: previewApp
+      parameters:
+      - name: type
+        in: path
+        description: The application type The application type
+        required: true
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      - name: name
+        in: path
+        description: The name of the application The name of the application
+        required: true
+        schema:
+          type: string
+      - name: features
+        in: query
+        description: The features The chosen features
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            type: string
+      - name: build
+        in: query
+        description: "The build type (optional, defaults to Gradle)"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/BuildTool"
+      - name: test
+        in: query
+        description: "The test framework (optional, defaults to JUnit)"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/TestFramework_1"
+      - name: lang
+        in: query
+        description: "The language (optional, defaults to Java)"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/Language"
+      - name: javaVersion
+        in: query
+        description: "The jdk version (optional, defaults to MicronautJdkVersionConfiguration#DEFAULT_OPTION)"
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/JdkVersion"
+      responses:
+        "200":
+          description: A preview of the application contents.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Preview"
+  /select-options:
+    get:
+      summary: Gets select options for the starter
+      description: Gets select options for the starter
+      operationId: selectOptions
+      responses:
+        "200":
+          description: Select Options and their defaults.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SelectOptions"
+  /versions:
+    get:
+      summary: Information about this instance.
+      description: Information about this instance.
+      operationId: getInfo
+      responses:
+        "200":
+          description: Information about this instance.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Version"
+  /{name}.zip:
+    get:
+      summary: Creates the default application type using the name of the given Zip.
+      description: Creates the default application type using the name of the given
+        Zip.
+      operationId: createZip
+      parameters:
+      - name: type
+        in: query
+        description: The type
+        required: true
+        explode: false
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      - name: name
+        in: path
+        description: The ZIP name
+        required: true
+        schema:
+          minLength: 1
+          pattern: "[\\w\\d-_]+"
+          type: string
+      - name: features
+        in: query
+        description: The features
+        explode: false
+        schema:
+          type: array
+          nullable: true
+          items:
+            type: string
+      - name: build
+        in: query
+        description: The build tool
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/BuildTool"
+      - name: test
+        in: query
+        description: The test framework
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/TestFramework_1"
+      - name: lang
+        in: query
+        description: The language
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/Language"
+      - name: javaVersion
+        in: query
+        explode: false
+        schema:
+          nullable: true
+          allOf:
+          - $ref: "#/components/schemas/JdkVersion"
+      - name: User-Agent
+        in: header
+        schema:
+          type: string
+          nullable: true
+      responses:
+        "200":
+          description: A ZIP file containing the generated application.
+          content:
+            application/zip: {}
+components:
+  schemas:
+    ApplicationType:
+      type: string
+      description: The value of the application type for select options
+      enum:
+      - DEFAULT
+      - CLI
+      - FUNCTION
+      - GRPC
+      - MESSAGING
+    ApplicationTypeDTO:
+      required:
+      - name
+      type: object
+      properties:
+        title:
+          type: string
+          description: The title of the application type
+        features:
+          type: array
+          description: The possible application features
+          items:
+            $ref: "#/components/schemas/Feature"
+        description:
+          type: string
+          description: A description of the application type
+        name:
+          type: string
+          description: The name of the application type
+        value:
+          description: The value of the application type for select options
+          allOf:
+          - $ref: "#/components/schemas/ApplicationType"
+        label:
+          type: string
+          description: The label of the application type for select options
+      description: the default value
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    ApplicationTypeInfo:
+      required:
+      - name
+      type: object
+      properties:
+        title:
+          type: string
+          description: The title of the application type
+        features:
+          type: array
+          description: The possible application features
+          items:
+            $ref: "#/components/schemas/Feature"
+        description:
+          type: string
+          description: A description of the application type
+        name:
+          type: string
+          description: The name of the application type
+        value:
+          description: The value of the application type for select options
+          allOf:
+          - $ref: "#/components/schemas/ApplicationType"
+        label:
+          type: string
+          description: The label of the application type for select options
+      description: DTO objects for ApplicationType.
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    ApplicationTypeList:
+      type: object
+      properties:
+        types:
+          type: array
+          description: The application types
+          items:
+            $ref: "#/components/schemas/ApplicationTypeInfo"
+      description: A list of application types
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    ApplicationTypeSelectOptions:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/ApplicationTypeInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/ApplicationTypeInfo"
+      description: supported options for application type
+      allOf:
+      - $ref: "#/components/schemas/SelectOptionDTO_ApplicationTypeDTO_"
+    BuildTool:
+      type: string
+      enum:
+      - GRADLE
+      - GRADLE_KOTLIN
+      - MAVEN
+    BuildToolDTO:
+      required:
+      - description
+      - label
+      - value
+      type: object
+      properties:
+        label:
+          type: string
+        description:
+          type: string
+        value:
+          $ref: "#/components/schemas/BuildTool"
+      description: the default value
+    BuildToolInfo:
+      required:
+      - description
+      - label
+      - value
+      type: object
+      properties:
+        label:
+          type: string
+        description:
+          type: string
+        value:
+          $ref: "#/components/schemas/BuildTool"
+      description: DTO objects for BuildTool.
+    BuildToolSelectOptions:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/BuildToolInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/BuildToolInfo"
+      description: supported options for build tools
+      allOf:
+      - $ref: "#/components/schemas/SelectOptionDTO_BuildToolDTO_"
+    Feature:
+      type: object
+      properties:
+        name:
+          type: string
+          description: The name of the feature
+        title:
+          type: string
+          description: The title of the feature
+        description:
+          type: string
+          description: A description of the feature
+        category:
+          type: string
+          description: The category to which this feature belongs to
+        preview:
+          type: boolean
+          description: Indicates whether the feature is a preview feature and subject
+            to change
+        community:
+          type: boolean
+          description: Indicates whether the feature is a community contributed feature
+      description: Represents an application feature.
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    FeatureList:
+      type: object
+      properties:
+        features:
+          type: array
+          description: A list of features
+          items:
+            $ref: "#/components/schemas/Feature"
+      description: A list of features
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    JdkVersion:
+      type: object
+      properties:
+        majorVersion:
+          type: integer
+          format: int32
+    JdkVersionDTO:
+      required:
+      - name
+      - value
+      type: object
+      properties:
+        description:
+          type: string
+          description: A description of the jdkVersion
+        name:
+          type: string
+          description: The name of the jdkVersion
+        value:
+          description: The value of the jdkVersion for select options
+          allOf:
+          - $ref: "#/components/schemas/JdkVersion"
+        label:
+          type: string
+          description: The label of the jdkVersion for select options
+      description: the default value
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    JdkVersionInfo:
+      required:
+      - name
+      - value
+      type: object
+      properties:
+        description:
+          type: string
+          description: A description of the jdkVersion
+        name:
+          type: string
+          description: The name of the jdkVersion
+        value:
+          description: The value of the jdkVersion for select options
+          allOf:
+          - $ref: "#/components/schemas/JdkVersion"
+        label:
+          type: string
+          description: The label of the jdkVersion for select options
+      description: DTO objects for JdkVersion.
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    JdkVersionSelectOptions:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/JdkVersionInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/JdkVersionInfo"
+      description: supported options for jdk versions
+      allOf:
+      - $ref: "#/components/schemas/SelectOptionDTO_JdkVersionDTO_"
+    Language:
+      type: string
+      enum:
+      - JAVA
+      - GROOVY
+      - KOTLIN
+    LanguageDTO:
+      required:
+      - name
+      type: object
+      properties:
+        extension:
+          type: string
+          description: The extension of the language
+        description:
+          type: string
+          description: A description of the language
+        name:
+          type: string
+          description: The name of the language
+        value:
+          description: The value of the language for select options
+          allOf:
+          - $ref: "#/components/schemas/Language"
+        label:
+          type: string
+          description: The label of the language for select options
+        defaults:
+          description: The default values that correlate to the language
+          allOf:
+          - $ref: "#/components/schemas/LanguageDefaults"
+      description: the default value
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    LanguageDefaults:
+      required:
+      - build
+      - test
+      type: object
+      properties:
+        test:
+          $ref: "#/components/schemas/TestFramework"
+        build:
+          $ref: "#/components/schemas/BuildTool"
+      description: The default values that correlate to the language
+    LanguageInfo:
+      required:
+      - name
+      type: object
+      properties:
+        extension:
+          type: string
+          description: The extension of the language
+        description:
+          type: string
+          description: A description of the language
+        name:
+          type: string
+          description: The name of the language
+        value:
+          description: The value of the language for select options
+          allOf:
+          - $ref: "#/components/schemas/Language"
+        label:
+          type: string
+          description: The label of the language for select options
+        defaults:
+          description: The default values that correlate to the language
+          allOf:
+          - $ref: "#/components/schemas/LanguageDefaults"
+      description: DTO objects for Language.
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    LanguageSelectOptions:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/LanguageInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/LanguageInfo"
+      description: supported options for code languages
+      allOf:
+      - $ref: "#/components/schemas/SelectOptionDTO_LanguageDTO_"
+    Link:
+      type: object
+      properties:
+        href:
+          type: string
+          description: The link address
+        templated:
+          type: boolean
+          description: Whether the link is templated
+      description: Represents a link.
+    Linkable:
+      type: object
+      properties:
+        _links:
+          type: object
+          additionalProperties:
+            $ref: "#/components/schemas/Link"
+          description: Links to other resources
+      description: A linkable type.
+    Preview:
+      type: object
+      properties:
+        contents:
+          type: object
+          additionalProperties:
+            type: string
+          description: The contents of the generated ZIP
+      description: Previews the contents of the generated ZIP
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    SelectOptionDTO_ApplicationTypeDTO_:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/ApplicationTypeInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/ApplicationTypeDTO"
+      description: Supported Option
+    SelectOptionDTO_BuildToolDTO_:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/BuildToolInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/BuildToolDTO"
+      description: Supported Option
+    SelectOptionDTO_JdkVersionDTO_:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/JdkVersionInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/JdkVersionDTO"
+      description: Supported Option
+    SelectOptionDTO_LanguageDTO_:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/LanguageInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/LanguageDTO"
+      description: Supported Option
+    SelectOptionDTO_TestFrameworkDTO_:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/TestFrameworkInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/TestFrameworkDTO"
+      description: Supported Option
+    SelectOptions:
+      type: object
+      properties:
+        type:
+          description: supported options for application type
+          allOf:
+          - $ref: "#/components/schemas/ApplicationTypeSelectOptions"
+        jdkVersion:
+          description: supported options for jdk versions
+          allOf:
+          - $ref: "#/components/schemas/JdkVersionSelectOptions"
+        lang:
+          description: supported options for code languages
+          allOf:
+          - $ref: "#/components/schemas/LanguageSelectOptions"
+        test:
+          description: supported options for test frameworks
+          allOf:
+          - $ref: "#/components/schemas/TestFrameworkSelectOptions"
+        build:
+          description: supported options for build tools
+          allOf:
+          - $ref: "#/components/schemas/BuildToolSelectOptions"
+      description: Aggregator for SelectOptionDTO.
+    TestFramework:
+      type: string
+      enum:
+      - JUNIT
+      - SPOCK
+      - KOTEST
+    TestFrameworkDTO:
+      required:
+      - name
+      - value
+      type: object
+      properties:
+        description:
+          type: string
+          description: A description of the testFramework
+        name:
+          type: string
+          description: The name of the testFramework
+        value:
+          description: The value of the testFramework for select options
+          allOf:
+          - $ref: "#/components/schemas/TestFramework"
+        label:
+          type: string
+          description: The label of the testFramework for select options
+      description: the default value
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    TestFrameworkInfo:
+      required:
+      - name
+      - value
+      type: object
+      properties:
+        description:
+          type: string
+          description: A description of the testFramework
+        name:
+          type: string
+          description: The name of the testFramework
+        value:
+          description: The value of the testFramework for select options
+          allOf:
+          - $ref: "#/components/schemas/TestFramework"
+        label:
+          type: string
+          description: The label of the testFramework for select options
+      description: DTO objects for TestFramework.
+      allOf:
+      - $ref: "#/components/schemas/Linkable"
+    TestFrameworkSelectOptions:
+      required:
+      - options
+      type: object
+      properties:
+        options:
+          type: array
+          description: The list of options
+          items:
+            description: the supported options
+            allOf:
+            - $ref: "#/components/schemas/TestFrameworkInfo"
+        defaultOption:
+          description: The Default option
+          allOf:
+          - $ref: "#/components/schemas/TestFrameworkInfo"
+      description: supported options for test frameworks
+      allOf:
+      - $ref: "#/components/schemas/SelectOptionDTO_TestFrameworkDTO_"
+    TestFramework_1:
+      type: string
+      enum:
+      - JUNIT
+      - SPOCK
+      - KOTLINTEST
+      - KOTEST
+    Version:
+      type: object
+      properties:
+        versions:
+          type: object
+          additionalProperties:
+            type: string
+      description: Information about the application.
+      allOf:
+      - $ref: "#/components/schemas/Linkable"

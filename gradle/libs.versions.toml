@@ -6,6 +6,7 @@ kapt = "2.3.10"
 # Micronaut
 micronaut-version = "4.10.2"
 micronaut-application = "4.6.2"
+micronaut-openapi = "4.6.2"
 
 # Plugins
 kotlinter = "5.4.2"
@@ -23,6 +24,7 @@ micronaut-kotlin-extension-functions = { module = "io.micronaut.kotlin:micronaut
 micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runtime" }
 micronaut-picocli = { module = "io.micronaut.picocli:micronaut-picocli" }
 micronaut-serde-processor = { module = "io.micronaut.serde:micronaut-serde-processor" }
+micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson" }
 
 # Kotlin
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
@@ -48,6 +50,7 @@ kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-allopen = { id = "org.jetbrains.kotlin.plugin.allopen", version.ref = "kotlin" }
 kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "kapt" }
 micronaut-application = { id = "io.micronaut.application", version.ref = "micronaut-application" }
+micronaut-openapi = {id = "io.micronaut.openapi", version.ref = "micronaut-openapi" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
