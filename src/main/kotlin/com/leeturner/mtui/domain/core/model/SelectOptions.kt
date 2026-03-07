@@ -1,4 +1,4 @@
-package com.leeturner.mtui.domain.launch.core.model
+package com.leeturner.mtui.domain.core.model
 
 import arrow.core.NonEmptyList
 
