@@ -1,4 +1,4 @@
-package com.leeturner.mtui.domain.launch.core.adaptors.outbound.http
+package com.leeturner.mtui.adaptors.outbound.http
 
 import arrow.core.Either
 import arrow.core.raise.either

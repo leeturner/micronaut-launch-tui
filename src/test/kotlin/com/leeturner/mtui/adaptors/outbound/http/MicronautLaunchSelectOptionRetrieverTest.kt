@@ -1,9 +1,8 @@
-package com.leeturner.mtui.domain.launch.core.adaptors.outbound.http
+package com.leeturner.mtui.adaptors.outbound.http
 
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.aResponse
-import com.github.tomakehurst.wiremock.client.WireMock.get
-import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.leeturner.mtui.adaptors.outbound.http.MicronautLaunchSelectOptionRetriever
 import io.github.nahuel92.wiremock.micronaut.ConfigureWireMock
 import io.github.nahuel92.wiremock.micronaut.InjectWireMock
 import io.github.nahuel92.wiremock.micronaut.MicronautWireMockTest
@@ -18,10 +17,10 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 @MicronautWireMockTest(
-    ConfigureWireMock(
-        name = "micronaut-launch",
-        properties = ["micronaut.http.services.micronaut-launch.url"],
-    ),
+  ConfigureWireMock(
+    name = "micronaut-launch",
+    properties = ["micronaut.http.services.micronaut-launch.url"],
+  ),
 )
 class MicronautLaunchSelectOptionRetrieverTest {
     @InjectWireMock("micronaut-launch")
@@ -35,9 +34,9 @@ class MicronautLaunchSelectOptionRetrieverTest {
         val jsonPayload = Files.readString(Paths.get("src/test/resources/payloads/get-select-options.json"))
 
         wireMock.stubFor(
-            get(urlEqualTo("/select-options"))
+            WireMock.get(WireMock.urlEqualTo("/select-options"))
                 .willReturn(
-                    aResponse()
+                    WireMock.aResponse()
                         .withHeader("Content-Type", "application/json")
                         .withBody(jsonPayload),
                 ),
