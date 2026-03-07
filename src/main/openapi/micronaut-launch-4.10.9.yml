@@ -651,8 +651,9 @@ components:
           description: The name of the jdkVersion
         value:
           description: The value of the jdkVersion for select options
-          allOf:
-          - $ref: "#/components/schemas/JdkVersion"
+          type: string
+#          allOf:
+#          - $ref: "#/components/schemas/JdkVersion"
         label:
           type: string
           description: The label of the jdkVersion for select options

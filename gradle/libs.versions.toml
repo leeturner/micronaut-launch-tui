@@ -16,6 +16,7 @@ shadow = "9.3.2"
 # Libraries
 strikt = "0.35.1"
 arrow = "2.2.1.1"
+wiremock-micronaut = "2.0.2"
 
 [libraries]
 
@@ -44,6 +45,7 @@ arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite-engine" }
 strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
 strikt-arrow = { module = "io.strikt:strikt-arrow", version.ref = "strikt" }
+wiremock-micronaut = { module = "io.github.nahuel92:wiremock-micronaut", version.ref = "wiremock-micronaut" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

@@ -28,6 +28,7 @@ dependencies {
     implementation(libs.micronaut.kotlin.runtime)
     implementation(libs.micronaut.picocli)
     implementation(libs.micronaut.serde.jackson)
+    implementation("io.micronaut:micronaut-http-client")
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlin.stdlib.jdk8)
     implementation(libs.arrow.core)
@@ -37,11 +38,12 @@ dependencies {
     testImplementation(libs.junit.platform.suite)
     testImplementation(libs.strikt.core)
     testImplementation(libs.strikt.arrow)
+    testImplementation(libs.wiremock.micronaut)
 }
 
 
 application {
-    mainClass = "com.leeturner.mtui.DemoCommand"
+    mainClass = "com.leeturner.mtui.MtuiCommand"
 }
 java {
     sourceCompatibility = JavaVersion.toVersion("21")
@@ -83,12 +85,19 @@ tasks.withType<FormatTask> {
 micronaut {
   openapi {
     client(file("src/main/openapi/micronaut-launch-4.10.9.yml")) {
-      apiPackageName.set("com.leeturner.mtui.launch.api")
-      modelPackageName.set("com.leeturner.mtui.launch.model")
+      apiPackageName.set("com.leeturner.mtui.domain.launch.infrastructure.api")
+      apiNamePrefix.set("MicronautLaunch")
+
+      modelPackageName.set("com.leeturner.mtui.domain.launch.infrastructure.model")
+      modelNamePrefix.set("MicronautLaunch")
+
       clientId.set("micronaut-launch")
+
       // Supports Kotlin codegen too
       lang.set("kotlin")
       useSealed.set(true)
+      useReactive.set(false)
+      useOptional.set(true)
     }
   }
 }
