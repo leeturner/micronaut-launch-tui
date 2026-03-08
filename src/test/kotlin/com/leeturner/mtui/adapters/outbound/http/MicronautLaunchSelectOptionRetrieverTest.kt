@@ -1,15 +1,19 @@
-package com.leeturner.mtui.adaptors.outbound.http
+package com.leeturner.mtui.adapters.outbound.http
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
+import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
 import io.github.nahuel92.wiremock.micronaut.ConfigureWireMock
 import io.github.nahuel92.wiremock.micronaut.InjectWireMock
 import io.github.nahuel92.wiremock.micronaut.MicronautWireMockTest
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
+import strikt.arrow.isLeft
 import strikt.arrow.isRight
 import strikt.assertions.hasSize
+import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 import strikt.assertions.map
 import java.nio.file.Files
@@ -70,6 +74,53 @@ class MicronautLaunchSelectOptionRetrieverTest {
             get { value.buildTypes }.hasSize(3).map { it.value }.isEqualTo(
                 listOf("GRADLE", "GRADLE_KOTLIN", "MAVEN"),
             )
+        }
+    }
+
+    @Test
+    fun `getSelectOptions returns a left when the api returns a non-200 response`() {
+        wireMock.stubFor(
+            WireMock
+                .get(WireMock.urlEqualTo("/select-options"))
+                .willReturn(
+                    WireMock
+                        .aResponse()
+                        .withStatus(500),
+                ),
+        )
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isLeft().and {
+            get { value }.isA<UnexpectedSelectOptionRetrievalError>().and {
+                get { status }.isEqualTo(500)
+                get { message }.isEqualTo("Client 'micronaut-launch': Server Error")
+            }
+        }
+    }
+
+    @Test
+    fun `getSelectOptions returns a left when the api returns an empty list of application types`() {
+        val jsonPayload =
+            Files.readString(Paths.get("src/test/resources/payloads/get-select-options-empty-types.json"))
+
+        wireMock.stubFor(
+            WireMock
+                .get(WireMock.urlEqualTo("/select-options"))
+                .willReturn(
+                    WireMock
+                        .aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(jsonPayload),
+                ),
+        )
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isLeft().and {
+            get { value }.isA<EmptySelectOptionsError>().and {
+                get { message }.isEqualTo("No application types found in Micronaut Launch select options")
+            }
         }
     }
 }

@@ -1,0 +1,78 @@
+{
+  "type": {
+    "options": [],
+    "defaultOption": null
+  },
+  "jdkVersion": {
+    "options": [
+      {
+        "description": "JDK_21",
+        "name": "JDK_21",
+        "value": "JDK_21",
+        "label": "21"
+      }
+    ],
+    "defaultOption": {
+      "description": "JDK_21",
+      "name": "JDK_21",
+      "value": "JDK_21",
+      "label": "21"
+    }
+  },
+  "lang": {
+    "options": [
+      {
+        "extension": "java",
+        "description": "java",
+        "name": "java",
+        "value": "JAVA",
+        "label": "Java",
+        "defaults": {
+          "test": "JUNIT",
+          "build": "GRADLE_KOTLIN"
+        }
+      }
+    ],
+    "defaultOption": {
+      "extension": "java",
+      "description": "java",
+      "name": "java",
+      "value": "JAVA",
+      "label": "Java",
+      "defaults": {
+        "test": "JUNIT",
+        "build": "GRADLE_KOTLIN"
+      }
+    }
+  },
+  "test": {
+    "options": [
+      {
+        "description": "JUnit",
+        "name": "junit",
+        "value": "JUNIT",
+        "label": "JUnit"
+      }
+    ],
+    "defaultOption": {
+      "description": "JUnit",
+      "name": "junit",
+      "value": "JUNIT",
+      "label": "JUnit"
+    }
+  },
+  "build": {
+    "options": [
+      {
+        "label": "Gradle Kotlin",
+        "description": "Gradle Kotlin",
+        "value": "GRADLE_KOTLIN"
+      }
+    ],
+    "defaultOption": {
+      "label": "Gradle Kotlin",
+      "description": "Gradle Kotlin",
+      "value": "GRADLE_KOTLIN"
+    }
+  }
+}

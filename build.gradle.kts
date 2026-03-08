@@ -16,7 +16,13 @@ version = "0.1"
 group = "com.leeturner.mtui"
 
 repositories {
-    mavenCentral()
+  maven {
+    url = uri("https://central.sonatype.com/repository/maven-snapshots/")
+    mavenContent {
+      snapshotsOnly()
+    }
+  }
+  mavenCentral()
 }
 
 dependencies {
@@ -28,7 +34,14 @@ dependencies {
     implementation(libs.micronaut.kotlin.runtime)
     implementation(libs.micronaut.picocli)
     implementation(libs.micronaut.serde.jackson)
-    implementation("io.micronaut:micronaut-http-client")
+    implementation(libs.micronaut.http.client)
+
+    implementation(platform(libs.tamboui.bom))
+    // For Toolkit DSL (recommended)
+    implementation(libs.tamboui.toolkit)
+    // JLine backend (required)
+    implementation(libs.tamboui.jline3.backend)
+
     implementation(libs.kotlin.reflect)
     implementation(libs.kotlin.stdlib.jdk8)
     implementation(libs.arrow.core)

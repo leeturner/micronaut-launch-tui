@@ -6,3 +6,7 @@ data class UnexpectedSelectOptionRetrievalError(
     val status: Int,
     val message: String,
 ) : SelectOptionsError
+
+data class EmptySelectOptionsError(
+    val message: String,
+) : SelectOptionsError

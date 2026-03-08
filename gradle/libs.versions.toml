@@ -17,6 +17,7 @@ shadow = "9.3.2"
 strikt = "0.35.1"
 arrow = "2.2.1.1"
 wiremock-micronaut = "2.0.2"
+tamboui = "0.2.0-SNAPSHOT"
 
 [libraries]
 
@@ -26,6 +27,7 @@ micronaut-kotlin-runtime = { module = "io.micronaut.kotlin:micronaut-kotlin-runt
 micronaut-picocli = { module = "io.micronaut.picocli:micronaut-picocli" }
 micronaut-serde-processor = { module = "io.micronaut.serde:micronaut-serde-processor" }
 micronaut-serde-jackson = { module = "io.micronaut.serde:micronaut-serde-jackson" }
+micronaut-http-client = { module = "io.micronaut:micronaut-http-client" }
 
 # Kotlin
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
@@ -37,6 +39,11 @@ logback-classic = { module = "ch.qos.logback:logback-classic" }
 # CLI
 picocli = { module = "info.picocli:picocli" }
 picocli-codegen = { module = "info.picocli:picocli-codegen" }
+
+# Tambui
+tamboui-bom = { module = "dev.tamboui:tamboui-bom", version.ref = "tamboui" }
+tamboui-toolkit = { module = "dev.tamboui:tamboui-toolkit" }
+tamboui-jline3-backend = { module = "dev.tamboui:tamboui-jline3-backend" }
 
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
