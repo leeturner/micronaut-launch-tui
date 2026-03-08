@@ -123,4 +123,54 @@ class MicronautLaunchSelectOptionRetrieverTest {
             }
         }
     }
+
+    @Test
+    fun `getSelectOptions returns a left when an application type is missing its value`() {
+        val jsonPayload =
+            Files.readString(Paths.get("src/test/resources/payloads/get-select-options-missing-type-value.json"))
+
+        wireMock.stubFor(
+            WireMock
+                .get(WireMock.urlEqualTo("/select-options"))
+                .willReturn(
+                    WireMock
+                        .aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(jsonPayload),
+                ),
+        )
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isLeft().and {
+            get { value }.isA<EmptySelectOptionsError>().and {
+                get { message }.isEqualTo("Missing value for application type 'default'")
+            }
+        }
+    }
+
+    @Test
+    fun `getSelectOptions returns a left when a language is missing its value`() {
+        val jsonPayload =
+            Files.readString(Paths.get("src/test/resources/payloads/get-select-options-missing-language-value.json"))
+
+        wireMock.stubFor(
+            WireMock
+                .get(WireMock.urlEqualTo("/select-options"))
+                .willReturn(
+                    WireMock
+                        .aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(jsonPayload),
+                ),
+        )
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isLeft().and {
+            get { value }.isA<EmptySelectOptionsError>().and {
+                get { message }.isEqualTo("Missing value for language 'java'")
+            }
+        }
+    }
 }

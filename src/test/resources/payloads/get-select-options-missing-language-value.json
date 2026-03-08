@@ -1,0 +1,81 @@
+{
+  "type": {
+    "options": [
+      {
+        "title": "Micronaut Application",
+        "description": "A Micronaut Application",
+        "name": "default",
+        "value": "DEFAULT",
+        "label": "Micronaut Application"
+      }
+    ],
+    "defaultOption": {
+      "title": "Micronaut Application",
+      "description": "A Micronaut Application",
+      "name": "default",
+      "value": "DEFAULT",
+      "label": "Micronaut Application"
+    }
+  },
+  "jdkVersion": {
+    "options": [
+      {
+        "description": "JDK_21",
+        "name": "JDK_21",
+        "value": "JDK_21",
+        "label": "21"
+      }
+    ],
+    "defaultOption": {
+      "description": "JDK_21",
+      "name": "JDK_21",
+      "value": "JDK_21",
+      "label": "21"
+    }
+  },
+  "lang": {
+    "options": [
+      {
+        "extension": "java",
+        "description": "java",
+        "name": "java",
+        "label": "Java",
+        "defaults": {
+          "test": "JUNIT",
+          "build": "GRADLE_KOTLIN"
+        }
+      }
+    ],
+    "defaultOption": null
+  },
+  "test": {
+    "options": [
+      {
+        "description": "JUnit",
+        "name": "junit",
+        "value": "JUNIT",
+        "label": "JUnit"
+      }
+    ],
+    "defaultOption": {
+      "description": "JUnit",
+      "name": "junit",
+      "value": "JUNIT",
+      "label": "JUnit"
+    }
+  },
+  "build": {
+    "options": [
+      {
+        "label": "Gradle Kotlin",
+        "description": "Gradle Kotlin",
+        "value": "GRADLE_KOTLIN"
+      }
+    ],
+    "defaultOption": {
+      "label": "Gradle Kotlin",
+      "description": "Gradle Kotlin",
+      "value": "GRADLE_KOTLIN"
+    }
+  }
+}

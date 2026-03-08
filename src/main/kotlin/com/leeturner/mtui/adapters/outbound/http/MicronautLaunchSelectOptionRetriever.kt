@@ -47,9 +47,9 @@ class MicronautLaunchSelectOptionRetriever(
 private fun MicronautLaunchSelectOptions.toSelectOptions(): Either<SelectOptionsError, SelectOptions> =
     either {
         val types =
-            type?.options?.map { it.toApplicationType() }?.toNonEmptyListOrNull()
+            type?.options?.map { it.toApplicationType().bind() }?.toNonEmptyListOrNull()
                 ?: raise(EmptySelectOptionsError("No application types found in Micronaut Launch select options"))
-        val defaultType = type?.defaultOption?.toApplicationType() ?: types.head
+        val defaultType = type?.defaultOption?.toApplicationType()?.bind() ?: types.head
 
         val jdkVersions =
             jdkVersion?.options?.map { it.toJdkVersion() }?.toNonEmptyListOrNull()
@@ -57,9 +57,9 @@ private fun MicronautLaunchSelectOptions.toSelectOptions(): Either<SelectOptions
         val defaultJdkVersion = jdkVersion?.defaultOption?.toJdkVersion() ?: jdkVersions.head
 
         val languages =
-            lang?.options?.map { it.toLanguage() }?.toNonEmptyListOrNull()
+            lang?.options?.map { it.toLanguage().bind() }?.toNonEmptyListOrNull()
                 ?: raise(EmptySelectOptionsError("No languages found in Micronaut Launch select options"))
-        val defaultLanguage = lang?.defaultOption?.toLanguage() ?: languages.head
+        val defaultLanguage = lang?.defaultOption?.toLanguage()?.bind() ?: languages.head
 
         val testFrameworks =
             test?.options?.map { it.toTestFramework() }?.toNonEmptyListOrNull()
@@ -85,14 +85,18 @@ private fun MicronautLaunchSelectOptions.toSelectOptions(): Either<SelectOptions
         )
     }
 
-private fun MicronautLaunchApplicationTypeInfo.toApplicationType(): ApplicationType =
-    ApplicationType(
-        title = title ?: "",
-        name = name,
-        description = description ?: "",
-        value = value?.value ?: "",
-        label = label ?: "",
-    )
+private fun MicronautLaunchApplicationTypeInfo.toApplicationType(): Either<SelectOptionsError, ApplicationType> =
+    either {
+        ApplicationType(
+            title = title ?: "",
+            name = name,
+            description = description ?: "",
+            value =
+                value?.value
+                    ?: raise(EmptySelectOptionsError("Missing value for application type '$name'")),
+            label = label ?: "",
+        )
+    }
 
 private fun MicronautLaunchJdkVersionInfo.toJdkVersion(): JdkVersion =
     JdkVersion(
@@ -102,21 +106,25 @@ private fun MicronautLaunchJdkVersionInfo.toJdkVersion(): JdkVersion =
         label = label ?: "",
     )
 
-private fun MicronautLaunchLanguageInfo.toLanguage(): Language =
-    Language(
-        extension = extension ?: "",
-        description = description ?: "",
-        name = name,
-        value = value?.value ?: "",
-        label = label ?: "",
-        defaults =
-            defaults?.let {
-                mapOf(
-                    "test" to it.test.value,
-                    "build" to it.build.value,
-                )
-            } ?: emptyMap(),
-    )
+private fun MicronautLaunchLanguageInfo.toLanguage(): Either<SelectOptionsError, Language> =
+    either {
+        Language(
+            extension = extension ?: "",
+            description = description ?: "",
+            name = name,
+            value =
+                value?.value
+                    ?: raise(EmptySelectOptionsError("Missing value for language '$name'")),
+            label = label ?: "",
+            defaults =
+                defaults?.let {
+                    mapOf(
+                        "test" to it.test.value,
+                        "build" to it.build.value,
+                    )
+                } ?: emptyMap(),
+        )
+    }
 
 private fun MicronautLaunchTestFrameworkInfo.toTestFramework(): TestFramework =
     TestFramework(
