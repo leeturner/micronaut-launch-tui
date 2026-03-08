@@ -81,21 +81,6 @@ micronaut {
         incremental(true)
         annotations("com.leeturner.mtui.*")
     }
-}
-
-tasks.named<io.micronaut.gradle.docker.NativeImageDockerfile>("dockerfileNative") {
-    jdkVersion = "21"
-}
-
-tasks.withType<LintTask> {
-  exclude { it.file.path.contains("build/generated/openapi") }
-}
-
-tasks.withType<FormatTask> {
-  exclude { it.file.path.contains("build/generated/openapi") }
-}
-
-micronaut {
   openapi {
     client(file("src/main/openapi/micronaut-launch-4.10.9.yml")) {
       apiPackageName.set("com.leeturner.mtui.domain.launch.infrastructure.api")
@@ -113,4 +98,16 @@ micronaut {
       useOptional.set(true)
     }
   }
+}
+
+tasks.named<io.micronaut.gradle.docker.NativeImageDockerfile>("dockerfileNative") {
+    jdkVersion = "21"
+}
+
+tasks.withType<LintTask> {
+  exclude { it.file.path.contains("build/generated/openapi") }
+}
+
+tasks.withType<FormatTask> {
+  exclude { it.file.path.contains("build/generated/openapi") }
 }
