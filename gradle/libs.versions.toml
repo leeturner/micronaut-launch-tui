@@ -1,7 +1,7 @@
 [versions]
 # Kotlin
 kotlin = "2.3.10"
-kapt = "2.3.10"
+kapt = "2.3.20"
 
 # Micronaut
 micronaut-version = "4.10.2"
