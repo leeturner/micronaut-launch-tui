@@ -16,12 +16,6 @@ version = "0.1"
 group = "com.leeturner.mtui"
 
 repositories {
-  maven {
-    url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-    mavenContent {
-      snapshotsOnly()
-    }
-  }
   mavenCentral()
 }
 
@@ -59,12 +53,12 @@ application {
     mainClass = "com.leeturner.mtui.MtuiCommand"
 }
 java {
-    sourceCompatibility = JavaVersion.toVersion("21")
+    sourceCompatibility = JavaVersion.toVersion("25")
 }
 
 kotlin {
     jvmToolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(25))
     }
 }
 
@@ -96,12 +90,24 @@ micronaut {
       useSealed.set(true)
       useReactive.set(false)
       useOptional.set(true)
+
+      // The generator inlines `items: allOf: [$ref]` as duplicate *AllOfOptions models, point them back at the real ones
+      val modelPackage = modelPackageName.get()
+      schemaMapping.set(
+        listOf("ApplicationType", "JdkVersion", "Language", "TestFramework", "BuildTool").associate {
+          "${it}SelectOptions_allOf_options" to "$modelPackage.MicronautLaunch${it}Info"
+        },
+      )
     }
   }
 }
 
+tasks.named<io.micronaut.gradle.docker.MicronautDockerfile>("dockerfile") {
+  baseImage = "eclipse-temurin:25-jre"
+}
+
 tasks.named<io.micronaut.gradle.docker.NativeImageDockerfile>("dockerfileNative") {
-    jdkVersion = "21"
+    jdkVersion = "25"
 }
 
 tasks.withType<LintTask> {

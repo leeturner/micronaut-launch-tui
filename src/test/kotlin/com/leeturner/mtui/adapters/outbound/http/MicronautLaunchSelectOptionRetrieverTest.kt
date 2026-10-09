@@ -4,9 +4,10 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
 import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
-import io.github.nahuel92.wiremock.micronaut.ConfigureWireMock
-import io.github.nahuel92.wiremock.micronaut.InjectWireMock
-import io.github.nahuel92.wiremock.micronaut.MicronautWireMockTest
+import com.leeturner.wiremock.micronaut.ConfigureWireMock
+import com.leeturner.wiremock.micronaut.EnableWireMock
+import com.leeturner.wiremock.micronaut.InjectWireMock
+import io.micronaut.test.extensions.junit5.annotation.MicronautTest
 import jakarta.inject.Inject
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
@@ -19,10 +20,11 @@ import strikt.assertions.map
 import java.nio.file.Files
 import java.nio.file.Paths
 
-@MicronautWireMockTest(
+@MicronautTest
+@EnableWireMock(
     ConfigureWireMock(
         name = "micronaut-launch",
-        properties = ["micronaut.http.services.micronaut-launch.url"],
+        baseUrlProperties = ["micronaut.http.services.micronaut-launch.url"],
     ),
 )
 class MicronautLaunchSelectOptionRetrieverTest {
