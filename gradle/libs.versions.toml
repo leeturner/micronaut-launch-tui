@@ -1,23 +1,23 @@
 [versions]
 # Kotlin
-kotlin = "2.3.20"
-kapt = "2.3.10"
+kotlin = "2.4.20"
+kapt = "2.4.20"
 
 # Micronaut
-micronaut-version = "4.10.2"
-micronaut-application = "4.6.2"
-micronaut-openapi = "4.6.2"
+micronaut-version = "5.2.2"
+micronaut-application = "5.0.2"
+micronaut-openapi = "5.0.2"
 
 # Plugins
 kotlinter = "5.4.2"
-detekt = "1.23.8"
+detekt = "2.0.0-alpha.6"
 shadow = "9.4.0"
 
 # Libraries
 strikt = "0.35.1"
 arrow = "2.2.2.1"
-wiremock-micronaut = "2.0.2"
-tamboui = "0.2.0-SNAPSHOT"
+wiremock-micronaut = "0.2.0"
+tamboui = "0.5.0"
 
 [libraries]
 
@@ -52,7 +52,7 @@ arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite-engine" }
 strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
 strikt-arrow = { module = "io.strikt:strikt-arrow", version.ref = "strikt" }
-wiremock-micronaut = { module = "io.github.nahuel92:wiremock-micronaut", version.ref = "wiremock-micronaut" }
+wiremock-micronaut = { module = "io.github.leeturner:wiremock-micronaut", version.ref = "wiremock-micronaut" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -62,4 +62,4 @@ micronaut-application = { id = "io.micronaut.application", version.ref = "micron
 micronaut-openapi = {id = "io.micronaut.openapi", version.ref = "micronaut-openapi" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow" }
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
-detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+detekt = { id = "dev.detekt", version.ref = "detekt" }
