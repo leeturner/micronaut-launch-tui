@@ -137,9 +137,9 @@ paths:
         in: query
         explode: false
         schema:
+          # mtui patch: upstream refs the JdkVersion object, but Launch takes the enum value, e.g. JDK_21
+          type: string
           nullable: true
-          allOf:
-          - $ref: "#/components/schemas/JdkVersion"
       - name: User-Agent
         in: header
         schema:

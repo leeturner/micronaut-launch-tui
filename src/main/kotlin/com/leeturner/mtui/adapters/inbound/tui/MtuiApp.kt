@@ -2,6 +2,7 @@ package com.leeturner.mtui.adapters.inbound.tui
 
 import arrow.core.left
 import com.leeturner.mtui.domain.core.model.ProjectName
+import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.services.CatalogLoader
 import com.leeturner.mtui.domain.core.services.ProjectGenerator
@@ -178,9 +179,10 @@ class MtuiApp(
         name: ProjectName,
     ) {
         val features = pickerScreen.picker.selected
+        val chosen = ProjectOptions.defaultsFrom(options)
         screen = Screen.Generating(options, name)
         background(
-            work = { generator.generate(options.defaultType, name, features, workingDir).mapLeft { it.message } },
+            work = { generator.generate(chosen, name, features, workingDir).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { result ->
             result.fold(
