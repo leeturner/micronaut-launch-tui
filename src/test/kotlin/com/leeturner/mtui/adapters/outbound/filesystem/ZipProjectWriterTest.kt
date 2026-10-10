@@ -65,6 +65,22 @@ class ZipProjectWriterTest {
     }
 
     @Test
+    fun `a single parent step out of the project folder rejects the zip and writes nothing`() {
+        val zip = zipOf("my-app/ok.txt" to "", "my-app/../evil.txt" to "")
+
+        expectThat(writer.write(zip, into)).isLeft().get { value }.isA<ProjectWriteFailed>()
+        expectThat(into.listDirectoryEntries()).isEmpty()
+    }
+
+    @Test
+    fun `stepping into a sibling folder rejects the zip and writes nothing`() {
+        val zip = zipOf("my-app/ok.txt" to "", "my-app/../my-app2/x" to "")
+
+        expectThat(writer.write(zip, into)).isLeft().get { value }.isA<ProjectWriteFailed>()
+        expectThat(into.listDirectoryEntries()).isEmpty()
+    }
+
+    @Test
     fun `more than one top-level folder rejects the zip and writes nothing`() {
         val zip = zipOf("my-app/a.txt" to "", "other/b.txt" to "")
 

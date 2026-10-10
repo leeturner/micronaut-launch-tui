@@ -32,9 +32,12 @@ class ZipProjectWriter : ProjectWriter {
         either {
             // Read and check everything first so a bad zip never touches the disk
             val entries = readEntries(zip)
-            val target = into.resolve(topLevelFolder(entries)).toAbsolutePath().normalize()
-            entries.forEach { entry ->
-                ensure(target.resolve(entry.name).normalize().startsWith(target)) {
+            val root = into.toAbsolutePath().normalize()
+            val target = root.resolve(topLevelFolder(entries)).normalize()
+            // Each entry is resolved once, and that same path is both checked and written
+            val paths = entries.associateWith { root.resolve(it.name).normalize() }
+            paths.forEach { (entry, path) ->
+                ensure(path.startsWith(target)) {
                     ProjectWriteFailed("Zip entry ${entry.name} escapes the project folder")
                 }
             }
@@ -48,7 +51,7 @@ class ZipProjectWriter : ProjectWriter {
             }
 
             try {
-                entries.forEach { it.writeTo(into) }
+                paths.forEach { (entry, path) -> entry.writeTo(path) }
             } catch (e: IOException) {
                 // The folder didn't exist before this write, so removing it loses nothing of the user's
                 target.toFile().deleteRecursively()
@@ -84,8 +87,7 @@ class ZipProjectWriter : ProjectWriter {
         val isDirectory: Boolean,
         val bytes: ByteArray,
     ) {
-        fun writeTo(into: Path) {
-            val path = into.resolve(name)
+        fun writeTo(path: Path) {
             if (isDirectory) {
                 Files.createDirectories(path)
                 return
