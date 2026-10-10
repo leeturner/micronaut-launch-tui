@@ -149,7 +149,11 @@ paths:
         "200":
           description: A ZIP file containing the generated application.
           content:
-            application/zip: {}
+            # mtui patch: no schema upstream, so the generated createApp returned Unit
+            application/zip:
+              schema:
+                type: string
+                format: binary
   /diff/{type}/feature/{feature}:
     get:
       summary: Returns a diff for the given application type and feature.
