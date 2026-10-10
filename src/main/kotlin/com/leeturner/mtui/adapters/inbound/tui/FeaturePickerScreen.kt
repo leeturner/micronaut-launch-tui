@@ -22,8 +22,9 @@ enum class PickerAction { NONE, GENERATE, BACK, QUIT }
 class FeaturePickerScreen(
     features: List<Feature>,
     private val listFocusId: String,
+    selected: List<String> = emptyList(),
 ) {
-    val picker = FeaturePicker(features)
+    val picker = FeaturePicker(features, selected)
     private val searchInput = TextInputState()
 
     fun render(
