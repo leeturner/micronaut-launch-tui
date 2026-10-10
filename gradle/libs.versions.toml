@@ -9,7 +9,7 @@ micronaut-application = "5.0.2"
 micronaut-openapi = "5.0.2"
 
 # Plugins
-kotlinter = "5.4.2"
+kotlinter = "5.7.0"
 detekt = "2.0.0-alpha.6"
 shadow = "9.6.1"
 
