@@ -75,7 +75,7 @@ micronaut {
         annotations("com.leeturner.mtui.*")
     }
   openapi {
-    client(file("src/main/openapi/micronaut-launch-4.10.9.yml")) {
+    client(file("src/main/openapi/micronaut-launch-5.2.2.yml")) {
       apiPackageName.set("com.leeturner.mtui.adapters.outbound.http.client.api")
       apiNamePrefix.set("MicronautLaunch")
 

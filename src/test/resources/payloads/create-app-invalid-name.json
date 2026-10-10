@@ -1,0 +1,1 @@
+{"_links":{"self":[{"href":"/create/DEFAULT/MyApp","templated":false}]},"_embedded":{"errors":[{"message":"Invalid package name: MyApp"}]},"message":"Bad Request"}
