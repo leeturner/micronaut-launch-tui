@@ -134,11 +134,12 @@ class MtuiApp(
             }
         }
 
-    // Keys are ignored while features are fetched, so nothing can start a second fetch
+    // Keys other than Ctrl+C are ignored while features are fetched, so nothing can start a second fetch
     private fun handleFormKey(
         event: KeyEvent,
         form: Screen.Form,
     ): EventResult {
+        if (event.isCtrlC) return finish(MtuiOutcome.Cancelled)
         if (!form.fetching) {
             when (formScreen.handleKey(event, runner().focusManager())) {
                 FormAction.SUBMIT -> submitName()
