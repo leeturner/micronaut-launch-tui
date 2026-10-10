@@ -13,7 +13,7 @@ import java.io.PrintStream
 
 class MtuiCommandTest {
     @Test
-    fun testWithCommandLineOption() {
+    fun `help describes the command`() {
         ApplicationContext.run(CLI, TEST).use { ctx ->
             val originalOut = System.out
             val baos = ByteArrayOutputStream()
@@ -21,13 +21,13 @@ class MtuiCommandTest {
 
             val exitCode =
                 try {
-                    PicocliRunner.execute(MtuiCommand::class.java, ctx, "-v")
+                    PicocliRunner.execute(MtuiCommand::class.java, ctx, "--help")
                 } finally {
                     System.setOut(originalOut)
                 }
 
             expectThat(exitCode).isEqualTo(0)
-            expectThat(baos.toString()).contains("Hi!")
+            expectThat(baos.toString()).contains("Create Micronaut projects from the terminal")
         }
     }
 

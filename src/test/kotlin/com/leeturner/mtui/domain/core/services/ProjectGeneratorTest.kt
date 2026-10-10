@@ -40,6 +40,16 @@ class ProjectGeneratorTest {
     }
 
     @Test
+    fun `existing folder message names the folder, not the full path`() {
+        writer.existing = true
+
+        expectThat(generator.generate(type, name, into))
+            .isLeft()
+            .get { value.message }
+            .isEqualTo("Folder my-app already exists")
+    }
+
+    @Test
     fun `launch errors are passed through and nothing is written`() {
         creator.result = ProjectRejected("Invalid package name: MyApp").left()
 

@@ -9,7 +9,7 @@ sealed interface GenerateProjectError {
 data class ProjectAlreadyExists(
     val path: Path,
 ) : GenerateProjectError {
-    override val message: String get() = "$path already exists"
+    override val message: String get() = "Folder ${path.fileName} already exists"
 }
 
 data class ProjectRejected(
