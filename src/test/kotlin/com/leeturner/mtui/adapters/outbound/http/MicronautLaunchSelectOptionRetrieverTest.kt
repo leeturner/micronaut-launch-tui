@@ -2,7 +2,9 @@ package com.leeturner.mtui.adapters.outbound.http
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.http.Fault
 import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
+import com.leeturner.mtui.domain.core.model.LanguageDefaults
 import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
 import com.leeturner.wiremock.micronaut.ConfigureWireMock
 import com.leeturner.wiremock.micronaut.EnableWireMock
@@ -16,9 +18,8 @@ import strikt.arrow.isRight
 import strikt.assertions.hasSize
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNull
 import strikt.assertions.map
-import java.nio.file.Files
-import java.nio.file.Paths
 
 @MicronautTest
 @EnableWireMock(
@@ -36,18 +37,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
 
     @Test
     fun `getSelectOptions returns correct data from micronaut launch api`() {
-        val jsonPayload = Files.readString(Paths.get("src/test/resources/payloads/get-select-options.json"))
-
-        wireMock.stubFor(
-            WireMock
-                .get(WireMock.urlEqualTo("/select-options"))
-                .willReturn(
-                    WireMock
-                        .aResponse()
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(jsonPayload),
-                ),
-        )
+        stubSelectOptions("get-select-options.json")
 
         val result = selectOptionsRetriever.getSelectOptions()
 
@@ -63,6 +53,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
             )
 
             get { value.defaultLanguage.value }.isEqualTo("JAVA")
+            get { value.defaultLanguage.defaults }.isEqualTo(LanguageDefaults(test = "JUNIT", build = "GRADLE_KOTLIN"))
             get { value.languages }.hasSize(3).map { it.value }.isEqualTo(
                 listOf("JAVA", "GROOVY", "KOTLIN"),
             )
@@ -76,6 +67,18 @@ class MicronautLaunchSelectOptionRetrieverTest {
             get { value.buildTypes }.hasSize(3).map { it.value }.isEqualTo(
                 listOf("GRADLE", "GRADLE_KOTLIN", "MAVEN"),
             )
+        }
+    }
+
+    @Test
+    fun `getSelectOptions falls back to the first option when a default is missing or not in the options`() {
+        stubSelectOptions("get-select-options-invalid-defaults.json")
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isRight().and {
+            get { value.defaultType.value }.isEqualTo("DEFAULT")
+            get { value.defaultJdkVersion.value }.isEqualTo("JDK_17")
         }
     }
 
@@ -102,20 +105,25 @@ class MicronautLaunchSelectOptionRetrieverTest {
     }
 
     @Test
-    fun `getSelectOptions returns a left when the api returns an empty list of application types`() {
-        val jsonPayload =
-            Files.readString(Paths.get("src/test/resources/payloads/get-select-options-empty-types.json"))
-
+    fun `getSelectOptions returns a left when the connection fails`() {
         wireMock.stubFor(
             WireMock
                 .get(WireMock.urlEqualTo("/select-options"))
-                .willReturn(
-                    WireMock
-                        .aResponse()
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(jsonPayload),
-                ),
+                .willReturn(WireMock.aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)),
         )
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isLeft().and {
+            get { value }.isA<UnexpectedSelectOptionRetrievalError>().and {
+                get { status }.isNull()
+            }
+        }
+    }
+
+    @Test
+    fun `getSelectOptions returns a left when the api returns an empty list of application types`() {
+        stubSelectOptions("get-select-options-empty-types.json")
 
         val result = selectOptionsRetriever.getSelectOptions()
 
@@ -128,19 +136,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
 
     @Test
     fun `getSelectOptions returns a left when an application type is missing its value`() {
-        val jsonPayload =
-            Files.readString(Paths.get("src/test/resources/payloads/get-select-options-missing-type-value.json"))
-
-        wireMock.stubFor(
-            WireMock
-                .get(WireMock.urlEqualTo("/select-options"))
-                .willReturn(
-                    WireMock
-                        .aResponse()
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(jsonPayload),
-                ),
-        )
+        stubSelectOptions("get-select-options-missing-type-value.json")
 
         val result = selectOptionsRetriever.getSelectOptions()
 
@@ -153,8 +149,19 @@ class MicronautLaunchSelectOptionRetrieverTest {
 
     @Test
     fun `getSelectOptions returns a left when a language is missing its value`() {
-        val jsonPayload =
-            Files.readString(Paths.get("src/test/resources/payloads/get-select-options-missing-language-value.json"))
+        stubSelectOptions("get-select-options-missing-language-value.json")
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isLeft().and {
+            get { value }.isA<EmptySelectOptionsError>().and {
+                get { message }.isEqualTo("Missing value for language 'java'")
+            }
+        }
+    }
+
+    private fun stubSelectOptions(payloadFile: String) {
+        val jsonPayload = javaClass.getResource("/payloads/$payloadFile")!!.readText()
 
         wireMock.stubFor(
             WireMock
@@ -166,13 +173,5 @@ class MicronautLaunchSelectOptionRetrieverTest {
                         .withBody(jsonPayload),
                 ),
         )
-
-        val result = selectOptionsRetriever.getSelectOptions()
-
-        expectThat(result).isLeft().and {
-            get { value }.isA<EmptySelectOptionsError>().and {
-                get { message }.isEqualTo("Missing value for language 'java'")
-            }
-        }
     }
 }

@@ -31,7 +31,6 @@ micronaut-http-client = { module = "io.micronaut:micronaut-http-client" }
 
 # Kotlin
 kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
-kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
 
 # Logging
 logback-classic = { module = "ch.qos.logback:logback-classic" }
