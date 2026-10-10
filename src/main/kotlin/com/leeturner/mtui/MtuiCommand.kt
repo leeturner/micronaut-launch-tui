@@ -2,6 +2,7 @@ package com.leeturner.mtui
 
 import com.leeturner.mtui.adapters.inbound.tui.MtuiApp
 import com.leeturner.mtui.adapters.inbound.tui.MtuiOutcome
+import com.leeturner.mtui.domain.core.ports.FeatureRetriever
 import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
 import com.leeturner.mtui.domain.core.services.ProjectGenerator
 import io.micronaut.configuration.picocli.PicocliRunner
@@ -20,10 +21,11 @@ class MtuiCommand
     @Inject
     constructor(
         private val selectOptionRetriever: SelectOptionRetriever,
+        private val featureRetriever: FeatureRetriever,
         private val projectGenerator: ProjectGenerator,
     ) : Callable<Int> {
         override fun call(): Int {
-            val app = MtuiApp(selectOptionRetriever, projectGenerator, Path.of("").toAbsolutePath())
+            val app = MtuiApp(selectOptionRetriever, featureRetriever, projectGenerator, Path.of("").toAbsolutePath())
             app.run()
             return when (val outcome = app.outcome) {
                 is MtuiOutcome.Created -> {
