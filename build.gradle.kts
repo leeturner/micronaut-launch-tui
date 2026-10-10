@@ -37,7 +37,6 @@ dependencies {
     implementation(libs.tamboui.jline3.backend)
 
     implementation(libs.kotlin.reflect)
-    implementation(libs.kotlin.stdlib.jdk8)
     implementation(libs.arrow.core)
 
     runtimeOnly(libs.logback.classic)
