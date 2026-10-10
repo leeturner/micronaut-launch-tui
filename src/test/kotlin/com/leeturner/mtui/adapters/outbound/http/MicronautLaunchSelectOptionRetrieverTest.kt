@@ -20,8 +20,6 @@ import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
 import strikt.assertions.map
-import java.nio.file.Files
-import java.nio.file.Paths
 
 @MicronautTest
 @EnableWireMock(
@@ -163,7 +161,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
     }
 
     private fun stubSelectOptions(payloadFile: String) {
-        val jsonPayload = Files.readString(Paths.get("src/test/resources/payloads/$payloadFile"))
+        val jsonPayload = javaClass.getResource("/payloads/$payloadFile")!!.readText()
 
         wireMock.stubFor(
             WireMock
