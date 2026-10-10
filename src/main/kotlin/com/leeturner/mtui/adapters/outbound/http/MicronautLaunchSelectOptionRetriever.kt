@@ -8,6 +8,7 @@ import com.leeturner.mtui.domain.core.model.BuildType
 import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
+import com.leeturner.mtui.domain.core.model.LanguageDefaults
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptionsError
 import com.leeturner.mtui.domain.core.model.TestFramework
@@ -120,13 +121,7 @@ private fun MicronautLaunchLanguageInfo.toLanguage(): Either<SelectOptionsError,
                 value?.value
                     ?: raise(EmptySelectOptionsError("Missing value for language '$name'")),
             label = label ?: "",
-            defaults =
-                defaults?.let {
-                    mapOf(
-                        "test" to it.test.value,
-                        "build" to it.build.value,
-                    )
-                } ?: emptyMap(),
+            defaults = defaults?.let { LanguageDefaults(test = it.test.value, build = it.build.value) },
         )
     }
 

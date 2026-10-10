@@ -4,6 +4,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.http.Fault
 import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
+import com.leeturner.mtui.domain.core.model.LanguageDefaults
 import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
 import com.leeturner.wiremock.micronaut.ConfigureWireMock
 import com.leeturner.wiremock.micronaut.EnableWireMock
@@ -65,6 +66,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
             )
 
             get { value.defaultLanguage.value }.isEqualTo("JAVA")
+            get { value.defaultLanguage.defaults }.isEqualTo(LanguageDefaults(test = "JUNIT", build = "GRADLE_KOTLIN"))
             get { value.languages }.hasSize(3).map { it.value }.isEqualTo(
                 listOf("JAVA", "GROOVY", "KOTLIN"),
             )

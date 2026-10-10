@@ -36,7 +36,12 @@ data class Language(
     val name: String,
     val value: String,
     val label: String,
-    val defaults: Map<String, String> = mapOf(),
+    val defaults: LanguageDefaults? = null,
+)
+
+data class LanguageDefaults(
+    val test: String,
+    val build: String,
 )
 
 data class TestFramework(
