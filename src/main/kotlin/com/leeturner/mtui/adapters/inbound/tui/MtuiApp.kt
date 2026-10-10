@@ -1,12 +1,9 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
 import arrow.core.left
-import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.SelectOptions
-import com.leeturner.mtui.domain.core.model.SelectOptionsError
-import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
-import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
+import com.leeturner.mtui.domain.core.services.CatalogLoader
 import com.leeturner.mtui.domain.core.services.ProjectGenerator
 import dev.tamboui.toolkit.Toolkit.column
 import dev.tamboui.toolkit.Toolkit.row
@@ -34,7 +31,7 @@ sealed interface MtuiOutcome {
 }
 
 class MtuiApp(
-    private val selectOptionRetriever: SelectOptionRetriever,
+    private val catalogLoader: CatalogLoader,
     private val generator: ProjectGenerator,
     private val workingDir: Path,
 ) : ToolkitApp() {
@@ -46,29 +43,51 @@ class MtuiApp(
 
     private val nameInput = TextInputState()
 
+    // Replaced once features load
+    private var pickerScreen = FeaturePickerScreen(emptyList(), ROOT_ID)
+
     override fun onStart() {
         background(
-            work = {
-                selectOptionRetriever
-                    .getSelectOptions()
-                    .fold<Screen>({ Screen.LoadFailed(it.text()) }, { Screen.Form(it) })
-            },
-            onFailure = { Screen.LoadFailed(it.message ?: it.toString()) },
-        ) { next ->
-            screen = next
-            if (next is Screen.Form) runner().focusManager().setFocus(NAME_INPUT_ID)
+            work = { catalogLoader.load().mapLeft { it.message } },
+            onFailure = { (it.message ?: it.toString()).left() },
+        ) { loaded ->
+            loaded.fold(
+                { screen = Screen.LoadFailed(it) },
+                { catalog ->
+                    pickerScreen = FeaturePickerScreen(catalog.features, ROOT_ID)
+                    showForm(catalog.options)
+                },
+            )
         }
     }
 
     override fun render(): Element {
+        val focus = runner().focusManager()
         val content =
             when (val current = screen) {
-                Screen.Loading -> row(spinner(), text(" Fetching options from Micronaut Launch…"))
-                is Screen.LoadFailed -> loadFailed(current.message)
-                is Screen.Form -> form(current.options, current.error, generating = false)
-                is Screen.Generating -> form(current.options, error = null, generating = true)
+                Screen.Loading -> {
+                    row(spinner(), text(" Fetching options from Micronaut Launch…"))
+                }
+
+                is Screen.LoadFailed -> {
+                    loadFailed(current.message)
+                }
+
+                is Screen.Form -> {
+                    form(current.options, current.error)
+                }
+
+                is Screen.Picker -> {
+                    val status = FeaturePickerScreen.status(current.error, generating = false)
+                    pickerScreen.render(current.options, current.name, status, focus)
+                }
+
+                is Screen.Generating -> {
+                    val status = FeaturePickerScreen.status(error = null, generating = true)
+                    pickerScreen.render(current.options, current.name, status, focus)
+                }
             }
-        return column(content).id("root").focusable().onKeyEvent(::handleKey)
+        return column(content).id(ROOT_ID).focusable().onKeyEvent(::handleKey)
     }
 
     private fun loadFailed(message: String): Element =
@@ -82,7 +101,6 @@ class MtuiApp(
     private fun form(
         options: SelectOptions,
         error: String?,
-        generating: Boolean,
     ): Element =
         column(
             text("Create a Micronaut project").bold(),
@@ -92,8 +110,8 @@ class MtuiApp(
                 .title("Name")
                 .placeholder("com.example.my-app")
                 .rounded()
-                .onSubmit { submit(options) },
-            if (generating) row(spinner(), text(" Generating…")) else text(error ?: "").bold(),
+                .onSubmit { submitName(options) },
+            text(error ?: "").bold(),
             text(""),
             text("Type:      ${options.defaultType.label}").dim(),
             text("Language:  ${options.defaultLanguage.label}").dim(),
@@ -101,7 +119,7 @@ class MtuiApp(
             text("Test:      ${options.defaultTestFramework.label}").dim(),
             text("JDK:       ${options.defaultJdkVersion.label}").dim(),
             text(""),
-            text("Enter: generate · Esc: quit").dim(),
+            text("Enter: choose features · Esc: quit").dim(),
         )
 
     private fun handleKey(event: KeyEvent): EventResult =
@@ -115,28 +133,61 @@ class MtuiApp(
                 EventResult.HANDLED
             }
 
+            is Screen.Picker -> {
+                when (pickerScreen.handleKey(event, runner().focusManager())) {
+                    PickerAction.GENERATE -> generate(current.options, current.name)
+                    PickerAction.BACK -> showForm(current.options)
+                    PickerAction.QUIT -> finish(MtuiOutcome.Cancelled)
+                    PickerAction.NONE -> Unit
+                }
+                // Everything is handled so default bindings such as q-to-quit never fire on the picker
+                EventResult.HANDLED
+            }
+
             else -> {
                 if (event.isCancel || event.isCtrlC) finish(MtuiOutcome.Cancelled) else EventResult.UNHANDLED
             }
         }
 
-    private fun submit(options: SelectOptions) {
+    private fun showForm(options: SelectOptions) {
+        screen = Screen.Form(options)
+        runner().focusManager().setFocus(NAME_INPUT_ID)
+    }
+
+    private fun submitName(options: SelectOptions) {
         if (screen !is Screen.Form) return
-        ProjectName.parse(nameInput.text()).fold(
-            { screen = Screen.Form(options, it.message) },
-            { name ->
-                screen = Screen.Generating(options)
-                background(
-                    work = { generator.generate(options.defaultType, name, workingDir).mapLeft { it.message } },
-                    onFailure = { (it.message ?: it.toString()).left() },
-                ) { result ->
-                    result.fold(
-                        { message -> screen = Screen.Form(options, message) },
-                        { path -> finish(MtuiOutcome.Created(path)) },
+        ProjectName
+            .parse(nameInput.text())
+            .mapLeft { it.message }
+            .fold(
+                { screen = Screen.Form(options, it) },
+                { name ->
+                    generator.checkAvailable(name, workingDir).fold(
+                        { screen = Screen.Form(options, it.message) },
+                        {
+                            screen = Screen.Picker(options, name)
+                            runner().focusManager().setFocus(ROOT_ID)
+                        },
                     )
-                }
-            },
-        )
+                },
+            )
+    }
+
+    private fun generate(
+        options: SelectOptions,
+        name: ProjectName,
+    ) {
+        val features = pickerScreen.picker.selected
+        screen = Screen.Generating(options, name)
+        background(
+            work = { generator.generate(options.defaultType, name, features, workingDir).mapLeft { it.message } },
+            onFailure = { (it.message ?: it.toString()).left() },
+        ) { result ->
+            result.fold(
+                { message -> screen = Screen.Picker(options, name, message) },
+                { path -> finish(MtuiOutcome.Created(path)) },
+            )
+        }
     }
 
     private fun finish(result: MtuiOutcome): EventResult {
@@ -169,18 +220,20 @@ class MtuiApp(
             val error: String? = null,
         ) : Screen
 
+        data class Picker(
+            val options: SelectOptions,
+            val name: ProjectName,
+            val error: String? = null,
+        ) : Screen
+
         data class Generating(
             val options: SelectOptions,
+            val name: ProjectName,
         ) : Screen
     }
 
     private companion object {
+        const val ROOT_ID = "root"
         const val NAME_INPUT_ID = "name"
     }
 }
-
-private fun SelectOptionsError.text(): String =
-    when (this) {
-        is UnexpectedSelectOptionRetrievalError -> message
-        is EmptySelectOptionsError -> message
-    }

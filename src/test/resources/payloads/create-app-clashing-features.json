@@ -1,0 +1,1 @@
+{"_links":{"self":[{"href":"/create/DEFAULT/com.example.demo?features=data-jdbc,data-jpa","templated":false}]},"_embedded":{"errors":[{"message":"There can only be one of the following features selected: [data-jdbc, data-jpa]"}]},"message":"Bad Request"}

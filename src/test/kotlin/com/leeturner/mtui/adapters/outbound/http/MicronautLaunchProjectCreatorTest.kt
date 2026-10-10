@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.arrow.isLeft
 import strikt.arrow.isRight
+import strikt.assertions.contains
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
@@ -49,7 +50,7 @@ class MicronautLaunchProjectCreatorTest {
                 .withBody(zip),
         )
 
-        expectThat(creator.createProject(type, name("com.example.my-app")))
+        expectThat(creator.createProject(type, name("com.example.my-app"), emptyList()))
             .isRight()
             .get { value.toList() }
             .isEqualTo(zip.toList())
@@ -66,7 +67,7 @@ class MicronautLaunchProjectCreatorTest {
                 .withBody(javaClass.getResource("/payloads/create-app-invalid-name.json")!!.readText()),
         )
 
-        expectThat(creator.createProject(type, name("MyApp")))
+        expectThat(creator.createProject(type, name("MyApp"), emptyList()))
             .isLeft()
             .get { value }
             .isA<ProjectRejected>()
@@ -85,7 +86,7 @@ class MicronautLaunchProjectCreatorTest {
                 .withBody("<html>nope</html>"),
         )
 
-        expectThat(creator.createProject(type, name("MyApp")))
+        expectThat(creator.createProject(type, name("MyApp"), emptyList()))
             .isLeft()
             .get { value }
             .isA<ProjectRejected>()
@@ -97,7 +98,7 @@ class MicronautLaunchProjectCreatorTest {
     fun `connection failure is an unexpected error`() {
         stubCreate("com.example.my-app", WireMock.aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER))
 
-        expectThat(creator.createProject(type, name("com.example.my-app")))
+        expectThat(creator.createProject(type, name("com.example.my-app"), emptyList()))
             .isLeft()
             .get { value }
             .isA<UnexpectedProjectCreationError>()
@@ -109,7 +110,7 @@ class MicronautLaunchProjectCreatorTest {
     fun `500 is an unexpected error with its status`() {
         stubCreate("com.example.my-app", WireMock.aResponse().withStatus(500))
 
-        expectThat(creator.createProject(type, name("com.example.my-app")))
+        expectThat(creator.createProject(type, name("com.example.my-app"), emptyList()))
             .isLeft()
             .get { value }
             .isA<UnexpectedProjectCreationError>()
@@ -121,12 +122,44 @@ class MicronautLaunchProjectCreatorTest {
     fun `application type unknown to the client is an unexpected error`() {
         val unknown = type.copy(value = "SERVERLESS")
 
-        expectThat(creator.createProject(unknown, name("com.example.my-app")))
+        expectThat(creator.createProject(unknown, name("com.example.my-app"), emptyList()))
             .isLeft()
             .get { value }
             .isA<UnexpectedProjectCreationError>()
             .get { message }
             .isEqualTo("Unsupported application type: SERVERLESS")
+    }
+
+    @Test
+    fun `selected features are sent to launch`() {
+        stubCreate("com.example.my-app", WireMock.aResponse().withStatus(201).withBody(byteArrayOf(1)))
+
+        creator.createProject(type, name("com.example.my-app"), listOf("data-jdbc", "flyway"))
+
+        expectThat(
+            wireMock.allServeEvents
+                .single()
+                .request.url,
+        ).contains("data-jdbc").contains("flyway")
+    }
+
+    @Test
+    fun `400 for clashing features surfaces launch's message`() {
+        stubCreate(
+            "com.example.my-app",
+            WireMock
+                .aResponse()
+                .withStatus(400)
+                .withHeader("Content-Type", "application/json")
+                .withBody(javaClass.getResource("/payloads/create-app-clashing-features.json")!!.readText()),
+        )
+
+        expectThat(creator.createProject(type, name("com.example.my-app"), listOf("data-jdbc", "data-jpa")))
+            .isLeft()
+            .get { value }
+            .isA<ProjectRejected>()
+            .get { message }
+            .isEqualTo("There can only be one of the following features selected: [data-jdbc, data-jpa]")
     }
 
     private fun name(raw: String) = ProjectName.parse(raw).getOrNull()!!
