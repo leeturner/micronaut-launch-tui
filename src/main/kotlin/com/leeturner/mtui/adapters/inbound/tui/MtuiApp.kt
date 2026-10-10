@@ -127,7 +127,9 @@ class MtuiApp(
             { name ->
                 screen = Screen.Generating(options)
                 background(
-                    work = { generator.generate(options.defaultType, name, emptyList(), workingDir).mapLeft { it.message } },
+                    work = {
+                        generator.generate(options.defaultType, name, emptyList(), workingDir).mapLeft { it.message }
+                    },
                     onFailure = { (it.message ?: it.toString()).left() },
                 ) { result ->
                     result.fold(

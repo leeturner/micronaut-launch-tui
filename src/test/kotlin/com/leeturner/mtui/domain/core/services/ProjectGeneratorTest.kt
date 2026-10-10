@@ -62,7 +62,10 @@ class ProjectGeneratorTest {
         creator.result = byteArrayOf(1, 2).right()
         writer.result = into.resolve("my-app").right()
 
-        expectThat(generator.generate(type, name, emptyList(), into)).isRight().get { value }.isEqualTo(into.resolve("my-app"))
+        expectThat(generator.generate(type, name, emptyList(), into))
+            .isRight()
+            .get { value }
+            .isEqualTo(into.resolve("my-app"))
     }
 
     @Test

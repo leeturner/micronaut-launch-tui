@@ -136,7 +136,11 @@ class MicronautLaunchProjectCreatorTest {
 
         creator.createProject(type, name("com.example.my-app"), listOf("data-jdbc", "flyway"))
 
-        expectThat(wireMock.allServeEvents.single().request.url).contains("data-jdbc").contains("flyway")
+        expectThat(
+            wireMock.allServeEvents
+                .single()
+                .request.url,
+        ).contains("data-jdbc").contains("flyway")
     }
 
     @Test
