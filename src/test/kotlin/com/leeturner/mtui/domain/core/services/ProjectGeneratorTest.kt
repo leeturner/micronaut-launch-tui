@@ -30,7 +30,7 @@ class ProjectGeneratorTest {
     fun `existing folder is refused before calling launch`() {
         writer.existing = true
 
-        expectThat(generator.generate(type, name, into))
+        expectThat(generator.generate(type, name, emptyList(), into))
             .isLeft()
             .get { value }
             .isA<ProjectAlreadyExists>()
@@ -43,7 +43,7 @@ class ProjectGeneratorTest {
     fun `existing folder message names the folder, not the full path`() {
         writer.existing = true
 
-        expectThat(generator.generate(type, name, into))
+        expectThat(generator.generate(type, name, emptyList(), into))
             .isLeft()
             .get { value.message }
             .isEqualTo("Folder my-app already exists")
@@ -53,7 +53,7 @@ class ProjectGeneratorTest {
     fun `launch errors are passed through and nothing is written`() {
         creator.result = ProjectRejected("Invalid package name: MyApp").left()
 
-        expectThat(generator.generate(type, name, into)).isLeft().get { value }.isA<ProjectRejected>()
+        expectThat(generator.generate(type, name, emptyList(), into)).isLeft().get { value }.isA<ProjectRejected>()
         expectThat(writer.writes).isEqualTo(0)
     }
 
@@ -62,18 +62,40 @@ class ProjectGeneratorTest {
         creator.result = byteArrayOf(1, 2).right()
         writer.result = into.resolve("my-app").right()
 
-        expectThat(generator.generate(type, name, into)).isRight().get { value }.isEqualTo(into.resolve("my-app"))
+        expectThat(generator.generate(type, name, emptyList(), into)).isRight().get { value }.isEqualTo(into.resolve("my-app"))
+    }
+
+    @Test
+    fun `features are passed to launch`() {
+        generator.generate(type, name, listOf("data-jdbc"), into)
+
+        expectThat(creator.lastFeatures).isEqualTo(listOf("data-jdbc"))
+    }
+
+    @Test
+    fun `checkAvailable refuses an existing folder`() {
+        writer.existing = true
+
+        expectThat(generator.checkAvailable(name, into)).isLeft().get { value }.isA<ProjectAlreadyExists>()
+    }
+
+    @Test
+    fun `checkAvailable accepts a new folder`() {
+        expectThat(generator.checkAvailable(name, into)).isRight()
     }
 
     private class FakeCreator : ProjectCreator {
         var calls = 0
+        var lastFeatures: List<String>? = null
         var result: Either<GenerateProjectError, ByteArray> = byteArrayOf().right()
 
         override fun createProject(
             type: ApplicationType,
             name: ProjectName,
+            features: List<String>,
         ): Either<GenerateProjectError, ByteArray> {
             calls++
+            lastFeatures = features
             return result
         }
     }

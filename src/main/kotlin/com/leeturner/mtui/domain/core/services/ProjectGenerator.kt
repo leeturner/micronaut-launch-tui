@@ -20,12 +20,21 @@ class ProjectGenerator(
     fun generate(
         type: ApplicationType,
         name: ProjectName,
+        features: List<String>,
         into: Path,
     ): Either<GenerateProjectError, Path> =
         either {
             // Checked before calling Launch so an existing folder fails fast; the writer checks again atomically
-            ensure(!writer.exists(name, into)) { ProjectAlreadyExists(into.resolve(name.folderName)) }
-            val zip = creator.createProject(type, name).bind()
+            checkAvailable(name, into).bind()
+            val zip = creator.createProject(type, name, features).bind()
             writer.write(zip, into).bind()
+        }
+
+    fun checkAvailable(
+        name: ProjectName,
+        into: Path,
+    ): Either<GenerateProjectError, Unit> =
+        either {
+            ensure(!writer.exists(name, into)) { ProjectAlreadyExists(into.resolve(name.folderName)) }
         }
 }

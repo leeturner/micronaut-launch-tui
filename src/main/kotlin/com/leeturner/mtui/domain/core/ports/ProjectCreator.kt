@@ -9,5 +9,6 @@ interface ProjectCreator {
     fun createProject(
         type: ApplicationType,
         name: ProjectName,
+        features: List<String>,
     ): Either<GenerateProjectError, ByteArray>
 }

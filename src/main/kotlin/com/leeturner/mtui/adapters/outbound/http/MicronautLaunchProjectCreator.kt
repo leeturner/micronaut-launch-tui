@@ -24,13 +24,14 @@ class MicronautLaunchProjectCreator(
     override fun createProject(
         type: ApplicationType,
         name: ProjectName,
+        features: List<String>,
     ): Either<GenerateProjectError, ByteArray> =
         either {
             val launchType =
                 MicronautLaunchApplicationType.VALUE_MAPPING[type.value]
                     ?: raise(UnexpectedProjectCreationError(null, "Unsupported application type: ${type.value}"))
             try {
-                micronautLaunchDefaultApi.createApp(launchType, name.value).toByteArray()
+                micronautLaunchDefaultApi.createApp(launchType, name.value, features.ifEmpty { null }).toByteArray()
             } catch (e: HttpClientResponseException) {
                 if (e.status == HttpStatus.BAD_REQUEST) {
                     raise(ProjectRejected(e.launchMessage() ?: e.status.reason))
