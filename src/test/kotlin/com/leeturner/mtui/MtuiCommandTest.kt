@@ -15,15 +15,19 @@ class MtuiCommandTest {
     @Test
     fun testWithCommandLineOption() {
         ApplicationContext.run(CLI, TEST).use { ctx ->
-            ByteArrayOutputStream().use { baos ->
-                System.setOut(PrintStream(baos))
+            val originalOut = System.out
+            val baos = ByteArrayOutputStream()
+            System.setOut(PrintStream(baos))
 
-                val args = arrayOf("-v")
-                val exitCode = PicocliRunner.execute(MtuiCommand::class.java, ctx, *args)
+            val exitCode =
+                try {
+                    PicocliRunner.execute(MtuiCommand::class.java, ctx, "-v")
+                } finally {
+                    System.setOut(originalOut)
+                }
 
-                expectThat(exitCode).isEqualTo(0)
-                expectThat(baos.toString()).contains("Hi!")
-            }
+            expectThat(exitCode).isEqualTo(0)
+            expectThat(baos.toString()).contains("Hi!")
         }
     }
 
