@@ -23,12 +23,11 @@ import com.leeturner.mtui.domain.launch.infrastructure.model.MicronautLaunchSele
 import com.leeturner.mtui.domain.launch.infrastructure.model.MicronautLaunchTestFrameworkInfo
 import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
-import jakarta.inject.Inject
 import jakarta.inject.Singleton
 
 @Singleton
 class MicronautLaunchSelectOptionRetriever(
-    @Inject private val micronautLaunchDefaultApi: MicronautLaunchDefaultApi,
+    private val micronautLaunchDefaultApi: MicronautLaunchDefaultApi,
 ) : SelectOptionRetriever {
     override fun getSelectOptions(): Either<SelectOptionsError, SelectOptions> =
         either {
