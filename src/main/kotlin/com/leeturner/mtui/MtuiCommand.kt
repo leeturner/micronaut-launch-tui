@@ -26,8 +26,7 @@ class MtuiCommand : Callable<Int> {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            val exitCode = PicocliRunner.call(MtuiCommand::class.java, *args)
-            exitProcess(exitCode ?: 0)
+            exitProcess(PicocliRunner.execute(MtuiCommand::class.java, *args))
         }
     }
 }
