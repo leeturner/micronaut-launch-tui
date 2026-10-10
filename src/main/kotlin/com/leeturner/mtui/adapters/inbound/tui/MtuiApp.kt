@@ -1,15 +1,9 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
 import arrow.core.left
-import arrow.core.raise.either
-import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
-import com.leeturner.mtui.domain.core.model.Feature
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.SelectOptions
-import com.leeturner.mtui.domain.core.model.SelectOptionsError
-import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
-import com.leeturner.mtui.domain.core.ports.FeatureRetriever
-import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
+import com.leeturner.mtui.domain.core.services.CatalogLoader
 import com.leeturner.mtui.domain.core.services.ProjectGenerator
 import dev.tamboui.toolkit.Toolkit.column
 import dev.tamboui.toolkit.Toolkit.row
@@ -37,8 +31,7 @@ sealed interface MtuiOutcome {
 }
 
 class MtuiApp(
-    private val selectOptionRetriever: SelectOptionRetriever,
-    private val featureRetriever: FeatureRetriever,
+    private val catalogLoader: CatalogLoader,
     private val generator: ProjectGenerator,
     private val workingDir: Path,
 ) : ToolkitApp() {
@@ -55,24 +48,14 @@ class MtuiApp(
 
     override fun onStart() {
         background(
-            work = {
-                either<String, Pair<SelectOptions, List<Feature>>> {
-                    val options = selectOptionRetriever.getSelectOptions().mapLeft { it.text() }.bind()
-                    val features =
-                        featureRetriever
-                            .getFeatures(options.defaultType, options.defaultLanguage)
-                            .mapLeft { it.message }
-                            .bind()
-                    options to features
-                }
-            },
+            work = { catalogLoader.load().mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
                 { screen = Screen.LoadFailed(it) },
-                { (options, features) ->
-                    pickerScreen = FeaturePickerScreen(features, ROOT_ID)
-                    showForm(options)
+                { catalog ->
+                    pickerScreen = FeaturePickerScreen(catalog.features, ROOT_ID)
+                    showForm(catalog.options)
                 },
             )
         }
@@ -254,9 +237,3 @@ class MtuiApp(
         const val NAME_INPUT_ID = "name"
     }
 }
-
-private fun SelectOptionsError.text(): String =
-    when (this) {
-        is UnexpectedSelectOptionRetrievalError -> message
-        is EmptySelectOptionsError -> message
-    }

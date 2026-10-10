@@ -1,12 +1,14 @@
 package com.leeturner.mtui.domain.core.model
 
-sealed interface SelectOptionsError
+sealed interface SelectOptionsError {
+    val message: String
+}
 
 data class UnexpectedSelectOptionRetrievalError(
     val status: Int?,
-    val message: String,
+    override val message: String,
 ) : SelectOptionsError
 
 data class EmptySelectOptionsError(
-    val message: String,
+    override val message: String,
 ) : SelectOptionsError
