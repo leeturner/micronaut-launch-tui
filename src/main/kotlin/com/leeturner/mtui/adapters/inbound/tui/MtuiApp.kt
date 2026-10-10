@@ -54,9 +54,6 @@ class MtuiApp(
     private var pickerScreen = FeaturePickerScreen(emptyList(), ROOT_ID)
 
     override fun onStart() {
-        runner().eventRouter().addGlobalHandler { event ->
-            if (event is KeyEvent && event.isCtrlC) finish(MtuiOutcome.Cancelled) else EventResult.UNHANDLED
-        }
         background(
             work = {
                 either<String, Pair<SelectOptions, List<Feature>>> {
