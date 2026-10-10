@@ -76,10 +76,10 @@ micronaut {
     }
   openapi {
     client(file("src/main/openapi/micronaut-launch-4.10.9.yml")) {
-      apiPackageName.set("com.leeturner.mtui.domain.launch.infrastructure.api")
+      apiPackageName.set("com.leeturner.mtui.adapters.outbound.http.client.api")
       apiNamePrefix.set("MicronautLaunch")
 
-      modelPackageName.set("com.leeturner.mtui.domain.launch.infrastructure.model")
+      modelPackageName.set("com.leeturner.mtui.adapters.outbound.http.client.model")
       modelNamePrefix.set("MicronautLaunch")
 
       clientId.set("micronaut-launch")
