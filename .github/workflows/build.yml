@@ -37,6 +37,8 @@ jobs:
         run: ./gradlew build
 
   dependency-submission:
+    # Needs contents: write, which pull requests from forks and Dependabot don't get
+    if: github.event_name == 'push'
 
     runs-on: ubuntu-latest
     permissions:
