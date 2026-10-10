@@ -2,7 +2,7 @@ package com.leeturner.mtui.adapters.inbound.tui
 
 import com.leeturner.mtui.domain.core.model.Feature
 import com.leeturner.mtui.domain.core.model.ProjectName
-import com.leeturner.mtui.domain.core.model.SelectOptions
+import com.leeturner.mtui.domain.core.model.ProjectOptions
 import dev.tamboui.toolkit.Toolkit.column
 import dev.tamboui.toolkit.Toolkit.list
 import dev.tamboui.toolkit.Toolkit.panel
@@ -22,12 +22,13 @@ enum class PickerAction { NONE, GENERATE, BACK, QUIT }
 class FeaturePickerScreen(
     features: List<Feature>,
     private val listFocusId: String,
+    selected: List<String> = emptyList(),
 ) {
-    val picker = FeaturePicker(features)
+    val picker = FeaturePicker(features, selected)
     private val searchInput = TextInputState()
 
     fun render(
-        options: SelectOptions,
+        options: ProjectOptions,
         name: ProjectName,
         status: StyledElement<*>,
         focus: FocusManager,
@@ -153,11 +154,11 @@ class FeaturePickerScreen(
     }
 }
 
-private fun SelectOptions.summary(): String =
+private fun ProjectOptions.summary(): String =
     listOf(
-        defaultType.label,
-        defaultLanguage.label,
-        defaultBuildType.label,
-        defaultTestFramework.label,
-        defaultJdkVersion.label,
+        type.label,
+        language.label,
+        build.label,
+        test.label,
+        jdk.label,
     ).joinToString(" · ")

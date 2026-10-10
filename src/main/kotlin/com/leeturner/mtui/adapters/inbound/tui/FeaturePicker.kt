@@ -10,6 +10,7 @@ data class FeatureGroup(
 // Search, highlight and selection for the feature picker, kept free of TamboUI so it can be unit tested
 class FeaturePicker(
     features: List<Feature>,
+    selected: List<String> = emptyList(),
 ) {
     private val all = features.sortedWith(compareBy({ it.category }, { it.name }))
     private val chosen = LinkedHashSet<String>()
@@ -34,6 +35,9 @@ class FeaturePicker(
 
     init {
         highlightedName = all.firstOrNull()?.name
+        // A selection carried over from another feature list keeps only the features this list has
+        val names = all.mapTo(HashSet()) { it.name }
+        selected.filterTo(chosen) { it in names }
     }
 
     fun isSelected(feature: Feature): Boolean = feature.name in chosen

@@ -129,6 +129,20 @@ class FeaturePickerTest {
         expectThat(picker.selected).isEmpty()
     }
 
+    @Test
+    fun `starting selection keeps features that exist, in order`() {
+        val restarted = FeaturePicker(listOf(postgres, ksp, jdbc, kapt), selected = listOf("ksp", "gone", "data-jdbc"))
+
+        expectThat(restarted.selected).isEqualTo(listOf("ksp", "data-jdbc"))
+    }
+
+    @Test
+    fun `a name passed twice is selected once`() {
+        val restarted = FeaturePicker(listOf(postgres, ksp, jdbc, kapt), selected = listOf("ksp", "ksp"))
+
+        expectThat(restarted.selected).isEqualTo(listOf("ksp"))
+    }
+
     private fun visible() = picker.groups.flatMap { it.features }
 
     private fun feature(

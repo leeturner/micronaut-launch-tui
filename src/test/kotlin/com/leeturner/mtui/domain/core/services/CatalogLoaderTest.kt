@@ -46,27 +46,29 @@ class CatalogLoaderTest {
     private val loader = CatalogLoader(selectOptionRetriever, featureRetriever)
 
     @Test
-    fun `features are loaded for the default type and language`() {
-        expectThat(loader.load()).isRight().and {
-            get { value.options }.isEqualTo(options)
-            get { value.features }.isEqualTo(listOf(ksp))
-        }
-        expectThat(featureRetriever.requested).isEqualTo(cli to kotlin)
+    fun `options are loaded`() {
+        expectThat(loader.loadOptions()).isRight().get { value }.isEqualTo(options)
+        expectThat(featureRetriever.requested).isNull()
     }
 
     @Test
-    fun `select options failure is reported and features are not fetched`() {
+    fun `options failure is reported`() {
         selectOptionRetriever.result = EmptySelectOptionsError("No application types").left()
 
-        expectThat(loader.load()).isLeft().get { value }.isEqualTo(CatalogError("No application types"))
-        expectThat(featureRetriever.requested).isNull()
+        expectThat(loader.loadOptions()).isLeft().get { value }.isEqualTo(CatalogError("No application types"))
+    }
+
+    @Test
+    fun `features are loaded for the given type and language`() {
+        expectThat(loader.loadFeatures(cli, kotlin)).isRight().get { value }.isEqualTo(listOf(ksp))
+        expectThat(featureRetriever.requested).isEqualTo(cli to kotlin)
     }
 
     @Test
     fun `features failure is reported`() {
         featureRetriever.result = FeaturesError(500, "Server Error").left()
 
-        expectThat(loader.load()).isLeft().get { value }.isEqualTo(CatalogError("Server Error"))
+        expectThat(loader.loadFeatures(cli, kotlin)).isLeft().get { value }.isEqualTo(CatalogError("Server Error"))
     }
 
     private inner class FakeSelectOptionRetriever : SelectOptionRetriever {

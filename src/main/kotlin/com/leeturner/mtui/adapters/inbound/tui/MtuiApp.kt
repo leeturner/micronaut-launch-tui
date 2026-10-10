@@ -1,20 +1,20 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
 import arrow.core.left
+import com.leeturner.mtui.domain.core.model.ApplicationType
+import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.ProjectName
-import com.leeturner.mtui.domain.core.model.SelectOptions
+import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.services.CatalogLoader
 import com.leeturner.mtui.domain.core.services.ProjectGenerator
 import dev.tamboui.toolkit.Toolkit.column
 import dev.tamboui.toolkit.Toolkit.row
 import dev.tamboui.toolkit.Toolkit.spinner
 import dev.tamboui.toolkit.Toolkit.text
-import dev.tamboui.toolkit.Toolkit.textInput
 import dev.tamboui.toolkit.app.ToolkitApp
 import dev.tamboui.toolkit.element.Element
 import dev.tamboui.toolkit.event.EventResult
 import dev.tamboui.tui.event.KeyEvent
-import dev.tamboui.widgets.input.TextInputState
 import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
@@ -41,21 +41,25 @@ class MtuiApp(
     @Volatile
     private var screen: Screen = Screen.Loading
 
-    private val nameInput = TextInputState()
+    // Created once the options load
+    private lateinit var formScreen: OptionsFormScreen
 
-    // Replaced once features load
+    // Replaced whenever features are fetched for a different type and language
     private var pickerScreen = FeaturePickerScreen(emptyList(), ROOT_ID)
+
+    // The type and language the picker's features were fetched for; null until the first fetch
+    private var featuresFor: Pair<ApplicationType, Language>? = null
 
     override fun onStart() {
         background(
-            work = { catalogLoader.load().mapLeft { it.message } },
+            work = { catalogLoader.loadOptions().mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
                 { screen = Screen.LoadFailed(it) },
-                { catalog ->
-                    pickerScreen = FeaturePickerScreen(catalog.features, ROOT_ID)
-                    showForm(catalog.options)
+                { options ->
+                    formScreen = OptionsFormScreen(options)
+                    showForm()
                 },
             )
         }
@@ -74,7 +78,7 @@ class MtuiApp(
                 }
 
                 is Screen.Form -> {
-                    form(current.options, current.error)
+                    formScreen.render(current.error, current.fetching, focus, ::submitName)
                 }
 
                 is Screen.Picker -> {
@@ -87,7 +91,8 @@ class MtuiApp(
                     pickerScreen.render(current.options, current.name, status, focus)
                 }
             }
-        return column(content).id(ROOT_ID).focusable().onKeyEvent(::handleKey)
+        // Not a Tab stop on the form, where Tab moves between the name box and the option rows
+        return column(content).id(ROOT_ID).focusable(screen !is Screen.Form).onKeyEvent(::handleKey)
     }
 
     private fun loadFailed(message: String): Element =
@@ -96,30 +101,6 @@ class MtuiApp(
             text(message),
             text(""),
             text("Press any key to exit").dim(),
-        )
-
-    private fun form(
-        options: SelectOptions,
-        error: String?,
-    ): Element =
-        column(
-            text("Create a Micronaut project").bold(),
-            text(""),
-            textInput(nameInput)
-                .id(NAME_INPUT_ID)
-                .title("Name")
-                .placeholder("com.example.my-app")
-                .rounded()
-                .onSubmit { submitName(options) },
-            text(error ?: "").bold(),
-            text(""),
-            text("Type:      ${options.defaultType.label}").dim(),
-            text("Language:  ${options.defaultLanguage.label}").dim(),
-            text("Build:     ${options.defaultBuildType.label}").dim(),
-            text("Test:      ${options.defaultTestFramework.label}").dim(),
-            text("JDK:       ${options.defaultJdkVersion.label}").dim(),
-            text(""),
-            text("Enter: choose features · Esc: quit").dim(),
         )
 
     private fun handleKey(event: KeyEvent): EventResult =
@@ -136,7 +117,7 @@ class MtuiApp(
             is Screen.Picker -> {
                 when (pickerScreen.handleKey(event, runner().focusManager())) {
                     PickerAction.GENERATE -> generate(current.options, current.name)
-                    PickerAction.BACK -> showForm(current.options)
+                    PickerAction.BACK -> showForm()
                     PickerAction.QUIT -> finish(MtuiOutcome.Cancelled)
                     PickerAction.NONE -> Unit
                 }
@@ -144,43 +125,89 @@ class MtuiApp(
                 EventResult.HANDLED
             }
 
-            else -> {
+            is Screen.Form -> {
+                handleFormKey(event, current)
+            }
+
+            Screen.Loading -> {
                 if (event.isCancel || event.isCtrlC) finish(MtuiOutcome.Cancelled) else EventResult.UNHANDLED
             }
         }
 
-    private fun showForm(options: SelectOptions) {
-        screen = Screen.Form(options)
-        runner().focusManager().setFocus(NAME_INPUT_ID)
+    // Keys other than Ctrl+C are ignored while features are fetched, so nothing can start a second fetch
+    private fun handleFormKey(
+        event: KeyEvent,
+        form: Screen.Form,
+    ): EventResult {
+        if (event.isCtrlC) return finish(MtuiOutcome.Cancelled)
+        if (!form.fetching) {
+            when (formScreen.handleKey(event, runner().focusManager())) {
+                FormAction.SUBMIT -> submitName()
+                FormAction.QUIT -> finish(MtuiOutcome.Cancelled)
+                FormAction.NONE -> Unit
+            }
+        }
+        return EventResult.HANDLED
     }
 
-    private fun submitName(options: SelectOptions) {
-        if (screen !is Screen.Form) return
+    // Errors are about the name, so the name box is focused to fix them
+    private fun showForm(error: String? = null) {
+        screen = Screen.Form(error)
+        formScreen.focusName(runner().focusManager())
+    }
+
+    // Enter can arrive both from the name box and as an unconsumed key, so anything but an idle form is ignored
+    private fun submitName() {
+        if ((screen as? Screen.Form)?.fetching != false) return
         ProjectName
-            .parse(nameInput.text())
+            .parse(formScreen.nameInput.text())
             .mapLeft { it.message }
             .fold(
-                { screen = Screen.Form(options, it) },
+                { showForm(it) },
                 { name ->
                     generator.checkAvailable(name, workingDir).fold(
-                        { screen = Screen.Form(options, it.message) },
-                        {
-                            screen = Screen.Picker(options, name)
-                            runner().focusManager().setFocus(ROOT_ID)
-                        },
+                        { showForm(it.message) },
+                        { openPicker(name) },
                     )
                 },
             )
     }
 
+    // Features depend only on type and language, so the picker is kept as it was left unless one of those changed
+    private fun openPicker(name: ProjectName) {
+        val chosen = formScreen.form.chosen
+        val wanted = chosen.type to chosen.language
+        if (wanted == featuresFor) {
+            screen = Screen.Picker(chosen, name)
+            runner().focusManager().setFocus(ROOT_ID)
+            return
+        }
+        screen = Screen.Form(fetching = true)
+        // Moved off the name box so typing is ignored along with every other key while fetching
+        runner().focusManager().setFocus(ROOT_ID)
+        background(
+            work = { catalogLoader.loadFeatures(chosen.type, chosen.language).mapLeft { it.message } },
+            onFailure = { (it.message ?: it.toString()).left() },
+        ) { loaded ->
+            loaded.fold(
+                { message -> showForm(message) },
+                { features ->
+                    pickerScreen = FeaturePickerScreen(features, ROOT_ID, pickerScreen.picker.selected)
+                    featuresFor = wanted
+                    openPicker(name)
+                },
+            )
+        }
+    }
+
     private fun generate(
-        options: SelectOptions,
+        options: ProjectOptions,
         name: ProjectName,
     ) {
         val features = pickerScreen.picker.selected
         screen = Screen.Generating(options, name)
         background(
-            work = { generator.generate(options.defaultType, name, features, workingDir).mapLeft { it.message } },
+            work = { generator.generate(options, name, features, workingDir).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { result ->
             result.fold(
@@ -216,24 +243,23 @@ class MtuiApp(
         ) : Screen
 
         data class Form(
-            val options: SelectOptions,
             val error: String? = null,
+            val fetching: Boolean = false,
         ) : Screen
 
         data class Picker(
-            val options: SelectOptions,
+            val options: ProjectOptions,
             val name: ProjectName,
             val error: String? = null,
         ) : Screen
 
         data class Generating(
-            val options: SelectOptions,
+            val options: ProjectOptions,
             val name: ProjectName,
         ) : Screen
     }
 
     private companion object {
         const val ROOT_ID = "root"
-        const val NAME_INPUT_ID = "name"
     }
 }
