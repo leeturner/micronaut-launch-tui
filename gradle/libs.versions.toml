@@ -15,7 +15,7 @@ shadow = "9.4.0"
 
 # Libraries
 strikt = "0.35.1"
-arrow = "2.2.2.1"
+arrow = "2.2.3"
 wiremock-micronaut = "0.2.0"
 tamboui = "0.5.0"
 
