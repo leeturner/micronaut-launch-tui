@@ -82,6 +82,30 @@ class MicronautLaunchSelectOptionRetrieverTest {
     }
 
     @Test
+    fun `getSelectOptions falls back to the first option when a default is missing or not in the options`() {
+        val jsonPayload =
+            Files.readString(Paths.get("src/test/resources/payloads/get-select-options-invalid-defaults.json"))
+
+        wireMock.stubFor(
+            WireMock
+                .get(WireMock.urlEqualTo("/select-options"))
+                .willReturn(
+                    WireMock
+                        .aResponse()
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(jsonPayload),
+                ),
+        )
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isRight().and {
+            get { value.defaultType.value }.isEqualTo("DEFAULT")
+            get { value.defaultJdkVersion.value }.isEqualTo("JDK_17")
+        }
+    }
+
+    @Test
     fun `getSelectOptions returns a left when the api returns a non-200 response`() {
         wireMock.stubFor(
             WireMock

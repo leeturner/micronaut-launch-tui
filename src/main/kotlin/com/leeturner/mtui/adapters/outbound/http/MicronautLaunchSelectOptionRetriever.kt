@@ -50,27 +50,30 @@ private fun MicronautLaunchSelectOptions.toSelectOptions(): Either<SelectOptions
         val types =
             type?.options?.map { it.toApplicationType().bind() }?.toNonEmptyListOrNull()
                 ?: raise(EmptySelectOptionsError("No application types found in Micronaut Launch select options"))
-        val defaultType = type?.defaultOption?.toApplicationType()?.bind() ?: types.head
+        val defaultType = types.firstOrNull { it.value == type?.defaultOption?.value?.value } ?: types.head
 
         val jdkVersions =
             jdkVersion?.options?.map { it.toJdkVersion() }?.toNonEmptyListOrNull()
                 ?: raise(EmptySelectOptionsError("No JDK versions found in Micronaut Launch select options"))
-        val defaultJdkVersion = jdkVersion?.defaultOption?.toJdkVersion() ?: jdkVersions.head
+        val defaultJdkVersion =
+            jdkVersions.firstOrNull { it.value == jdkVersion?.defaultOption?.value } ?: jdkVersions.head
 
         val languages =
             lang?.options?.map { it.toLanguage().bind() }?.toNonEmptyListOrNull()
                 ?: raise(EmptySelectOptionsError("No languages found in Micronaut Launch select options"))
-        val defaultLanguage = lang?.defaultOption?.toLanguage()?.bind() ?: languages.head
+        val defaultLanguage = languages.firstOrNull { it.value == lang?.defaultOption?.value?.value } ?: languages.head
 
         val testFrameworks =
             test?.options?.map { it.toTestFramework() }?.toNonEmptyListOrNull()
                 ?: raise(EmptySelectOptionsError("No test frameworks found in Micronaut Launch select options"))
-        val defaultTestFramework = test?.defaultOption?.toTestFramework() ?: testFrameworks.head
+        val defaultTestFramework =
+            testFrameworks.firstOrNull { it.value == test?.defaultOption?.value?.value } ?: testFrameworks.head
 
         val buildTypes =
             build?.options?.map { it.toBuildType() }?.toNonEmptyListOrNull()
                 ?: raise(EmptySelectOptionsError("No build types found in Micronaut Launch select options"))
-        val defaultBuildType = build?.defaultOption?.toBuildType() ?: buildTypes.head
+        val defaultBuildType =
+            buildTypes.firstOrNull { it.value == build?.defaultOption?.value?.value } ?: buildTypes.head
 
         SelectOptions(
             types = types,
