@@ -4,7 +4,7 @@ info:
   description: API for Creating Micronaut Applications
   license:
     name: Apache 2.0
-  version: 4.10.9
+  version: 5.2.2
 paths:
   /application-types:
     get:
@@ -49,6 +49,31 @@ paths:
         required: true
         schema:
           $ref: "#/components/schemas/ApplicationType"
+      responses:
+        "200":
+          description: The features
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeatureList"
+  /application-types/{type}/features/{lang}:
+    get:
+      summary: List the type features supported by the given language.
+      description: List the type features supported by the given language.
+      operationId: featuresByLanguage
+      parameters:
+      - name: type
+        in: path
+        description: The application type
+        required: true
+        schema:
+          $ref: "#/components/schemas/ApplicationType"
+      - name: lang
+        in: path
+        description: The language
+        required: true
+        schema:
+          $ref: "#/components/schemas/Language"
       responses:
         "200":
           description: The features
@@ -359,7 +384,6 @@ paths:
       - name: type
         in: query
         description: The type
-        required: true
         explode: false
         schema:
           $ref: "#/components/schemas/ApplicationType"
@@ -526,6 +550,7 @@ components:
       - GRADLE
       - GRADLE_KOTLIN
       - MAVEN
+      - PYRONAUT
     BuildToolDTO:
       required:
       - description
@@ -685,6 +710,7 @@ components:
       - JAVA
       - GROOVY
       - KOTLIN
+      - PYTHON
     LanguageDTO:
       required:
       - name
@@ -916,6 +942,7 @@ components:
       - JUNIT
       - SPOCK
       - KOTEST
+      - PYTEST
     TestFrameworkDTO:
       required:
       - name
@@ -986,6 +1013,7 @@ components:
       - SPOCK
       - KOTLINTEST
       - KOTEST
+      - PYTEST
     Version:
       type: object
       properties:
