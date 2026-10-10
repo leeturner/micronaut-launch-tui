@@ -1,6 +1,8 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
 import arrow.core.left
+import com.leeturner.mtui.domain.core.model.ApplicationType
+import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptions
@@ -44,20 +46,20 @@ class MtuiApp(
 
     private val nameInput = TextInputState()
 
-    // Replaced once features load
+    // Replaced whenever features are fetched for a different type and language
     private var pickerScreen = FeaturePickerScreen(emptyList(), ROOT_ID)
+
+    // The type and language the picker's features were fetched for; null until the first fetch
+    private var featuresFor: Pair<ApplicationType, Language>? = null
 
     override fun onStart() {
         background(
-            work = { catalogLoader.load().mapLeft { it.message } },
+            work = { catalogLoader.loadOptions().mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
                 { screen = Screen.LoadFailed(it) },
-                { catalog ->
-                    pickerScreen = FeaturePickerScreen(catalog.features, ROOT_ID)
-                    showForm(catalog.options)
-                },
+                { options -> showForm(options) },
             )
         }
     }
@@ -75,7 +77,7 @@ class MtuiApp(
                 }
 
                 is Screen.Form -> {
-                    form(current.options, current.error)
+                    form(current.options, current.error, current.fetching)
                 }
 
                 is Screen.Picker -> {
@@ -102,6 +104,7 @@ class MtuiApp(
     private fun form(
         options: SelectOptions,
         error: String?,
+        fetching: Boolean,
     ): Element =
         column(
             text("Create a Micronaut project").bold(),
@@ -112,7 +115,7 @@ class MtuiApp(
                 .placeholder("com.example.my-app")
                 .rounded()
                 .onSubmit { submitName(options) },
-            text(error ?: "").bold(),
+            if (fetching) row(spinner(), text(" Fetching features…")) else text(error ?: "").bold(),
             text(""),
             text("Type:      ${options.defaultType.label}").dim(),
             text("Language:  ${options.defaultLanguage.label}").dim(),
@@ -134,6 +137,10 @@ class MtuiApp(
                 EventResult.HANDLED
             }
 
+            is Screen.Form if current.fetching -> {
+                EventResult.HANDLED
+            }
+
             is Screen.Picker -> {
                 when (pickerScreen.handleKey(event, runner().focusManager())) {
                     PickerAction.GENERATE -> generate(current.options, current.name)
@@ -150,13 +157,16 @@ class MtuiApp(
             }
         }
 
-    private fun showForm(options: SelectOptions) {
-        screen = Screen.Form(options)
+    private fun showForm(
+        options: SelectOptions,
+        error: String? = null,
+    ) {
+        screen = Screen.Form(options, error)
         runner().focusManager().setFocus(NAME_INPUT_ID)
     }
 
     private fun submitName(options: SelectOptions) {
-        if (screen !is Screen.Form) return
+        if ((screen as? Screen.Form)?.fetching != false) return
         ProjectName
             .parse(nameInput.text())
             .mapLeft { it.message }
@@ -165,13 +175,40 @@ class MtuiApp(
                 { name ->
                     generator.checkAvailable(name, workingDir).fold(
                         { screen = Screen.Form(options, it.message) },
-                        {
-                            screen = Screen.Picker(options, name)
-                            runner().focusManager().setFocus(ROOT_ID)
-                        },
+                        { openPicker(options, name) },
                     )
                 },
             )
+    }
+
+    // Features depend only on type and language, so the picker is kept as it was left unless one of those changed
+    private fun openPicker(
+        options: SelectOptions,
+        name: ProjectName,
+    ) {
+        val chosen = ProjectOptions.defaultsFrom(options)
+        val wanted = chosen.type to chosen.language
+        if (wanted == featuresFor) {
+            screen = Screen.Picker(options, name)
+            runner().focusManager().setFocus(ROOT_ID)
+            return
+        }
+        screen = Screen.Form(options, fetching = true)
+        // Moved off the name box so typing is ignored along with every other key while fetching
+        runner().focusManager().setFocus(ROOT_ID)
+        background(
+            work = { catalogLoader.loadFeatures(chosen.type, chosen.language).mapLeft { it.message } },
+            onFailure = { (it.message ?: it.toString()).left() },
+        ) { loaded ->
+            loaded.fold(
+                { message -> showForm(options, message) },
+                { features ->
+                    pickerScreen = FeaturePickerScreen(features, ROOT_ID, pickerScreen.picker.selected)
+                    featuresFor = wanted
+                    openPicker(options, name)
+                },
+            )
+        }
     }
 
     private fun generate(
@@ -220,6 +257,7 @@ class MtuiApp(
         data class Form(
             val options: SelectOptions,
             val error: String? = null,
+            val fetching: Boolean = false,
         ) : Screen
 
         data class Picker(
