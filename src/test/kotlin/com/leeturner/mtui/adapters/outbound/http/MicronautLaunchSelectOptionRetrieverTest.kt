@@ -2,6 +2,7 @@ package com.leeturner.mtui.adapters.outbound.http
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.http.Fault
 import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
 import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
 import com.leeturner.wiremock.micronaut.ConfigureWireMock
@@ -16,6 +17,7 @@ import strikt.arrow.isRight
 import strikt.assertions.hasSize
 import strikt.assertions.isA
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNull
 import strikt.assertions.map
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -97,6 +99,23 @@ class MicronautLaunchSelectOptionRetrieverTest {
             get { value }.isA<UnexpectedSelectOptionRetrievalError>().and {
                 get { status }.isEqualTo(500)
                 get { message }.isEqualTo("Client 'micronaut-launch': Server Error")
+            }
+        }
+    }
+
+    @Test
+    fun `getSelectOptions returns a left when the connection fails`() {
+        wireMock.stubFor(
+            WireMock
+                .get(WireMock.urlEqualTo("/select-options"))
+                .willReturn(WireMock.aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)),
+        )
+
+        val result = selectOptionsRetriever.getSelectOptions()
+
+        expectThat(result).isLeft().and {
+            get { value }.isA<UnexpectedSelectOptionRetrievalError>().and {
+                get { status }.isNull()
             }
         }
     }

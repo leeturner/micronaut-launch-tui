@@ -20,6 +20,7 @@ import com.leeturner.mtui.domain.launch.infrastructure.model.MicronautLaunchJdkV
 import com.leeturner.mtui.domain.launch.infrastructure.model.MicronautLaunchLanguageInfo
 import com.leeturner.mtui.domain.launch.infrastructure.model.MicronautLaunchSelectOptions
 import com.leeturner.mtui.domain.launch.infrastructure.model.MicronautLaunchTestFrameworkInfo
+import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
 import jakarta.inject.Inject
 import jakarta.inject.Singleton
@@ -33,10 +34,10 @@ class MicronautLaunchSelectOptionRetriever(
             try {
                 val micronautLaunchSelectOptions = micronautLaunchDefaultApi.selectOptions()
                 micronautLaunchSelectOptions.toSelectOptions().bind()
-            } catch (e: HttpClientResponseException) {
+            } catch (e: HttpClientException) {
                 raise(
                     UnexpectedSelectOptionRetrievalError(
-                        status = e.status.code,
+                        status = (e as? HttpClientResponseException)?.status?.code,
                         message = e.message ?: "Unknown error",
                     ),
                 )
