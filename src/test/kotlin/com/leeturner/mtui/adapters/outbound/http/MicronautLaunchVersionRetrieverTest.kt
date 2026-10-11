@@ -60,6 +60,13 @@ class MicronautLaunchVersionRetrieverTest {
     }
 
     @Test
+    fun `404 is an error`() {
+        stubVersions(WireMock.aResponse().withStatus(404))
+
+        expectThat(retriever.getMicronautVersion(LaunchServer.RELEASE)).isLeft()
+    }
+
+    @Test
     fun `snapshot server is called when it is chosen`() {
         stubVersions(okJson("/payloads/get-versions.json"), on = snapshot)
 

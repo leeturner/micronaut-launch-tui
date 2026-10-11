@@ -29,6 +29,7 @@ class CatalogLoader(
             .map { server ->
                 CompletableFuture
                     .supplyAsync { loadVersion(server) }
+                    .exceptionally { MicronautVersion.fallback(server) }
                     .completeOnTimeout(MicronautVersion.fallback(server), timeout.toMillis(), TimeUnit.MILLISECONDS)
             }.map { it.join() }
 

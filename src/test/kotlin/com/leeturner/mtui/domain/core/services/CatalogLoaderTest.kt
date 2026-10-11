@@ -116,13 +116,22 @@ class CatalogLoaderTest {
         )
     }
 
+    @Test
+    fun `a server whose lookup throws gets its fallback label`() {
+        versionRetriever.throws = LaunchServer.SNAPSHOT
+
+        expectThat(loader.loadVersions(timeout)[1]).isEqualTo(MicronautVersion(LaunchServer.SNAPSHOT, "Snapshot"))
+    }
+
     private class FakeVersionRetriever : VersionRetriever {
         var hangs: LaunchServer? = null
+        var throws: LaunchServer? = null
         val results: MutableMap<LaunchServer, Either<VersionError, String>> =
             mutableMapOf(LaunchServer.RELEASE to "5.2.2".right(), LaunchServer.SNAPSHOT to "5.2.3-SNAPSHOT".right())
 
         override fun getMicronautVersion(server: LaunchServer): Either<VersionError, String> {
             if (server == hangs) Thread.sleep(Duration.ofSeconds(2))
+            check(server != throws) { "Unexpected failure" }
             return results.getValue(server)
         }
     }

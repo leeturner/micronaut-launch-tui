@@ -4,26 +4,31 @@ import com.leeturner.mtui.domain.core.model.LaunchServer
 import io.micronaut.context.annotation.Value
 import io.micronaut.core.propagation.PropagatedContext
 import io.micronaut.core.propagation.PropagatedContextElement
+import io.micronaut.http.HttpResponse
 import io.micronaut.http.MutableHttpRequest
 import io.micronaut.http.annotation.ClientFilter
 import io.micronaut.http.annotation.RequestFilter
+import io.micronaut.http.client.exceptions.HttpClientResponseException
 import io.micronaut.http.uri.UriBuilder
 import java.net.URI
+import java.util.Optional
 import java.util.function.Supplier
 
 data class ChosenLaunchServer(
     val server: LaunchServer,
 ) : PropagatedContextElement
 
-// Calls made inside go to the given server
+// Calls made inside go to the given server. The generated client returns null for a 404, which is raised like
+// any other error response so the adapters' HttpClientException handling covers it
 fun <T : Any> onServer(
     server: LaunchServer,
-    call: () -> T,
+    call: () -> T?,
 ): T =
     PropagatedContext
         .getOrEmpty()
         .plus(ChosenLaunchServer(server))
-        .propagate(Supplier(call))
+        .propagate(Supplier { Optional.ofNullable(call()) })
+        .orElseThrow { HttpClientResponseException("Not Found", HttpResponse.notFound<Any>()) }
 
 // The generated client only knows the release server's URL, so requests made onServer(SNAPSHOT) are redirected
 @ClientFilter(serviceId = ["micronaut-launch"])
