@@ -12,6 +12,9 @@ import com.leeturner.mtui.domain.core.ports.FeatureRetriever
 import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
 import com.leeturner.mtui.domain.core.ports.VersionRetriever
 import jakarta.inject.Singleton
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 
 @Singleton
 class CatalogLoader(
@@ -19,13 +22,20 @@ class CatalogLoader(
     private val featureRetriever: FeatureRetriever,
     private val versionRetriever: VersionRetriever,
 ) {
-    // A label is only cosmetic, so a server whose version can't be read is still offered
-    fun loadVersions(): List<MicronautVersion> =
-        LaunchServer.entries.map { server ->
-            versionRetriever
-                .getMicronautVersion(server)
-                .fold({ MicronautVersion.fallback(server) }, { MicronautVersion(server, it) })
-        }
+    // A label is only cosmetic, so a server whose version can't be read, or isn't read in time, is still offered.
+    // Servers are asked in parallel so one that hangs only loses its own label
+    fun loadVersions(timeout: Duration): List<MicronautVersion> =
+        LaunchServer.entries
+            .map { server ->
+                CompletableFuture
+                    .supplyAsync { loadVersion(server) }
+                    .completeOnTimeout(MicronautVersion.fallback(server), timeout.toMillis(), TimeUnit.MILLISECONDS)
+            }.map { it.join() }
+
+    private fun loadVersion(server: LaunchServer): MicronautVersion =
+        versionRetriever
+            .getMicronautVersion(server)
+            .fold({ MicronautVersion.fallback(server) }, { MicronautVersion(server, it) })
 
     fun loadOptions(server: LaunchServer): Either<CatalogError, SelectOptions> =
         selectOptionRetriever.getSelectOptions(server).mapLeft { error -> CatalogError(error.message) }

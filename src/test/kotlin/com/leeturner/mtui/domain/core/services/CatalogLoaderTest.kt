@@ -27,6 +27,7 @@ import strikt.arrow.isLeft
 import strikt.arrow.isRight
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
+import java.time.Duration
 
 class CatalogLoaderTest {
     private val cli = ApplicationType(title = "", name = "", description = "", value = "CLI", label = "")
@@ -48,6 +49,7 @@ class CatalogLoaderTest {
     private val selectOptionRetriever = FakeSelectOptionRetriever()
     private val featureRetriever = FakeFeatureRetriever()
     private val versionRetriever = FakeVersionRetriever()
+    private val timeout = Duration.ofSeconds(1)
     private val loader = CatalogLoader(selectOptionRetriever, featureRetriever, versionRetriever)
 
     @Test
@@ -87,7 +89,7 @@ class CatalogLoaderTest {
 
     @Test
     fun `versions are labelled from each server`() {
-        expectThat(loader.loadVersions()).isEqualTo(
+        expectThat(loader.loadVersions(timeout)).isEqualTo(
             listOf(
                 MicronautVersion(LaunchServer.RELEASE, "5.2.2"),
                 MicronautVersion(LaunchServer.SNAPSHOT, "5.2.3-SNAPSHOT"),
@@ -99,14 +101,30 @@ class CatalogLoaderTest {
     fun `a server whose version can't be read gets its fallback label`() {
         versionRetriever.results[LaunchServer.SNAPSHOT] = VersionError(null, "Connection refused").left()
 
-        expectThat(loader.loadVersions()[1]).isEqualTo(MicronautVersion(LaunchServer.SNAPSHOT, "Snapshot"))
+        expectThat(loader.loadVersions(timeout)[1]).isEqualTo(MicronautVersion(LaunchServer.SNAPSHOT, "Snapshot"))
+    }
+
+    @Test
+    fun `a server that doesn't answer in time only loses its own label`() {
+        versionRetriever.hangs = LaunchServer.SNAPSHOT
+
+        expectThat(loader.loadVersions(Duration.ofMillis(100))).isEqualTo(
+            listOf(
+                MicronautVersion(LaunchServer.RELEASE, "5.2.2"),
+                MicronautVersion(LaunchServer.SNAPSHOT, "Snapshot"),
+            ),
+        )
     }
 
     private class FakeVersionRetriever : VersionRetriever {
+        var hangs: LaunchServer? = null
         val results: MutableMap<LaunchServer, Either<VersionError, String>> =
             mutableMapOf(LaunchServer.RELEASE to "5.2.2".right(), LaunchServer.SNAPSHOT to "5.2.3-SNAPSHOT".right())
 
-        override fun getMicronautVersion(server: LaunchServer) = results.getValue(server)
+        override fun getMicronautVersion(server: LaunchServer): Either<VersionError, String> {
+            if (server == hangs) Thread.sleep(Duration.ofSeconds(2))
+            return results.getValue(server)
+        }
     }
 
     private inner class FakeSelectOptionRetriever : SelectOptionRetriever {
