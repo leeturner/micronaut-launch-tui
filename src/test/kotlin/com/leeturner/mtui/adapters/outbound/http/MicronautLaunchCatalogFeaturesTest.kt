@@ -5,8 +5,8 @@ import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.http.Fault
 import com.leeturner.mtui.domain.core.model.ApplicationType
+import com.leeturner.mtui.domain.core.model.CatalogError
 import com.leeturner.mtui.domain.core.model.Feature
-import com.leeturner.mtui.domain.core.model.FeaturesError
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.wiremock.micronaut.ConfigureWireMock
@@ -20,7 +20,6 @@ import strikt.arrow.isLeft
 import strikt.arrow.isRight
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
-import strikt.assertions.isNull
 import strikt.assertions.isTrue
 
 @MicronautTest
@@ -31,7 +30,7 @@ import strikt.assertions.isTrue
     ),
     ConfigureWireMock(name = "snapshot", baseUrlProperties = ["mtui.launch.snapshot-url"]),
 )
-class MicronautLaunchFeatureRetrieverTest {
+class MicronautLaunchCatalogFeaturesTest {
     @InjectWireMock("micronaut-launch")
     private lateinit var wireMock: WireMockServer
 
@@ -39,7 +38,7 @@ class MicronautLaunchFeatureRetrieverTest {
     private lateinit var snapshot: WireMockServer
 
     @Inject
-    lateinit var retriever: MicronautLaunchFeatureRetriever
+    lateinit var catalog: MicronautLaunchCatalog
 
     private val type = ApplicationType(title = "", name = "", description = "", value = "DEFAULT", label = "")
     private val language = Language(extension = "", description = "", name = "", value = "JAVA", label = "")
@@ -48,7 +47,7 @@ class MicronautLaunchFeatureRetrieverTest {
     fun `200 maps launch features`() {
         stubFeatures(okJson("/payloads/get-features-default-java.json"))
 
-        expectThat(retriever.getFeatures(LaunchServer.RELEASE, type, language)).isRight().get { value }.and {
+        expectThat(catalog.getFeatures(LaunchServer.RELEASE, type, language)).isRight().get { value }.and {
             get { first { it.name == "data-jdbc" } }.isEqualTo(
                 Feature(
                     name = "data-jdbc",
@@ -68,42 +67,42 @@ class MicronautLaunchFeatureRetrieverTest {
     fun `missing fields are defaulted and nameless features skipped`() {
         stubFeatures(okJson("/payloads/get-features-missing-fields.json"))
 
-        expectThat(retriever.getFeatures(LaunchServer.RELEASE, type, language))
+        expectThat(catalog.getFeatures(LaunchServer.RELEASE, type, language))
             .isRight()
             .get { value }
             .isEqualTo(listOf(Feature("bare", "", "", "Other", preview = false, community = false)))
     }
 
     @Test
-    fun `500 is an error with its status`() {
+    fun `500 is an error`() {
         stubFeatures(WireMock.aResponse().withStatus(500))
 
-        expectThat(retriever.getFeatures(LaunchServer.RELEASE, type, language))
+        expectThat(catalog.getFeatures(LaunchServer.RELEASE, type, language))
             .isLeft()
-            .get { value.status }
-            .isEqualTo(500)
+            .get { value.message }
+            .isEqualTo("Client 'micronaut-launch': Server Error")
     }
 
     @Test
     fun `connection failure is an error`() {
         stubFeatures(WireMock.aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER))
 
-        expectThat(retriever.getFeatures(LaunchServer.RELEASE, type, language)).isLeft().get { value.status }.isNull()
+        expectThat(catalog.getFeatures(LaunchServer.RELEASE, type, language)).isLeft()
     }
 
     @Test
     fun `language unknown to the client is an error`() {
-        expectThat(retriever.getFeatures(LaunchServer.RELEASE, type, language.copy(value = "COBOL")))
+        expectThat(catalog.getFeatures(LaunchServer.RELEASE, type, language.copy(value = "COBOL")))
             .isLeft()
             .get { value }
-            .isEqualTo(FeaturesError(null, "Unsupported language: COBOL"))
+            .isEqualTo(CatalogError("Unsupported language: COBOL"))
     }
 
     @Test
     fun `snapshot server is called when it is chosen`() {
         stubFeatures(okJson("/payloads/get-features-default-java.json"), on = snapshot)
 
-        expectThat(retriever.getFeatures(LaunchServer.SNAPSHOT, type, language)).isRight()
+        expectThat(catalog.getFeatures(LaunchServer.SNAPSHOT, type, language)).isRight()
         expectThat(wireMock.allServeEvents).isEmpty()
     }
 

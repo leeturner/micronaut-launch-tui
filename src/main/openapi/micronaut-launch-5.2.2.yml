@@ -344,9 +344,9 @@ paths:
         description: "The jdk version (optional, defaults to MicronautJdkVersionConfiguration#DEFAULT_OPTION)"
         explode: false
         schema:
+          # mtui patch: upstream refs the JdkVersion object, but Launch takes the enum value, e.g. JDK_21
+          type: string
           nullable: true
-          allOf:
-          - $ref: "#/components/schemas/JdkVersion"
       responses:
         "200":
           description: A preview of the application contents.
@@ -826,7 +826,9 @@ components:
         contents:
           type: object
           additionalProperties:
+            # mtui patch: Launch sends null for binary files, e.g. gradle-wrapper.jar
             type: string
+            nullable: true
           description: The contents of the generated ZIP
       description: Previews the contents of the generated ZIP
       allOf:

@@ -1,12 +1,10 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
 import arrow.core.left
-import com.leeturner.mtui.domain.core.model.ApplicationType
-import com.leeturner.mtui.domain.core.model.Language
-import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
+import com.leeturner.mtui.domain.core.model.hasSameFeaturesAs
 import com.leeturner.mtui.domain.core.services.CatalogLoader
 import com.leeturner.mtui.domain.core.services.ProjectGenerator
 import dev.tamboui.toolkit.Toolkit.column
@@ -41,6 +39,8 @@ sealed interface MtuiOutcome {
     ) : MtuiOutcome
 }
 
+// One function per step of each flow; they share the screen state, so splitting the class would scatter it
+@Suppress("TooManyFunctions")
 class MtuiApp(
     private val catalogLoader: CatalogLoader,
     private val generator: ProjectGenerator,
@@ -58,16 +58,12 @@ class MtuiApp(
     // Replaced whenever features are fetched for a different type and language
     private var pickerScreen = FeaturePickerScreen(emptyList(), ROOT_ID)
 
-    // The server, type and language the picker's features were fetched for; null until the first fetch
-    private var featuresFor: Triple<LaunchServer, ApplicationType, Language>? = null
+    // The options the picker's features were fetched for; null until the first fetch
+    private var featuresFor: ProjectOptions? = null
 
     override fun onStart() {
         background(
-            work = {
-                // Fetched alongside the options and capped at VERSIONS_TIMEOUT, so labels never hold up start-up
-                val versions = CompletableFuture.supplyAsync { catalogLoader.loadVersions(VERSIONS_TIMEOUT) }
-                catalogLoader.loadOptions(LaunchServer.RELEASE).mapLeft { it.message }.map { it to versions.join() }
-            },
+            work = { catalogLoader.loadStart(VERSIONS_TIMEOUT).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
@@ -93,17 +89,29 @@ class MtuiApp(
                 }
 
                 is Screen.Form -> {
-                    formScreen.render(current.error, current.fetching, current.switchingTo, focus, ::submitName)
+                    formScreen.render(
+                        current.error,
+                        current.fetching,
+                        current.previewing,
+                        current.switchingTo,
+                        focus,
+                        ::submitName,
+                    )
                 }
 
                 is Screen.Picker -> {
-                    val status = FeaturePickerScreen.status(current.error, generating = false)
+                    val loading = "Fetching preview…".takeIf { current.previewing }
+                    val status = FeaturePickerScreen.status(current.error, loading)
                     pickerScreen.render(current.options, current.name, status, focus)
                 }
 
                 is Screen.Generating -> {
-                    val status = FeaturePickerScreen.status(error = null, generating = true)
+                    val status = FeaturePickerScreen.status(error = null, loading = "Generating…")
                     pickerScreen.render(current.options, current.name, status, focus)
+                }
+
+                is Screen.Preview -> {
+                    current.screen.render(current.options)
                 }
             }
         // Not a Tab stop on the form, where Tab moves between the name box and the option rows
@@ -122,18 +130,20 @@ class MtuiApp(
             }
 
             is Screen.Picker -> {
-                when (pickerScreen.handleKey(event, runner().focusManager())) {
-                    PickerAction.GENERATE -> generate(current.options, current.name)
-                    PickerAction.BACK -> showForm()
-                    PickerAction.QUIT -> finish(MtuiOutcome.Cancelled)
-                    PickerAction.NONE -> Unit
-                }
-                // Everything is handled so default bindings such as q-to-quit never fire on the picker
-                EventResult.HANDLED
+                handlePickerKey(event, current)
             }
 
             is Screen.Form -> {
                 handleFormKey(event, current)
+            }
+
+            is Screen.Preview -> {
+                when (current.screen.handleKey(event)) {
+                    PreviewAction.BACK -> back(current.back)
+                    PreviewAction.QUIT -> finish(MtuiOutcome.Cancelled)
+                    PreviewAction.NONE -> Unit
+                }
+                EventResult.HANDLED
             }
 
             Screen.Loading -> {
@@ -141,7 +151,27 @@ class MtuiApp(
             }
         }
 
-    // Keys other than Ctrl+C are ignored while features or options load, so nothing can start a second load
+    // Keys other than Ctrl+C are ignored while the preview loads
+    private fun handlePickerKey(
+        event: KeyEvent,
+        picker: Screen.Picker,
+    ): EventResult {
+        if (picker.previewing) {
+            if (event.isCtrlC) finish(MtuiOutcome.Cancelled)
+        } else {
+            when (pickerScreen.handleKey(event, runner().focusManager())) {
+                PickerAction.GENERATE -> generate(picker.options, picker.name)
+                PickerAction.PREVIEW -> previewFromPicker(picker.options, picker.name)
+                PickerAction.BACK -> showForm()
+                PickerAction.QUIT -> finish(MtuiOutcome.Cancelled)
+                PickerAction.NONE -> Unit
+            }
+        }
+        // Everything is handled so default bindings such as q-to-quit never fire on the picker
+        return EventResult.HANDLED
+    }
+
+    // Keys other than Ctrl+C are ignored while features, options or the preview load, so nothing starts a second load
     private fun handleFormKey(
         event: KeyEvent,
         form: Screen.Form,
@@ -151,6 +181,7 @@ class MtuiApp(
             when (val action = formScreen.handleKey(event, runner().focusManager())) {
                 FormAction.Submit -> submitName()
                 FormAction.Quit -> finish(MtuiOutcome.Cancelled)
+                FormAction.Preview -> previewFromForm()
                 is FormAction.SwitchVersion -> switchVersion(action.version)
                 FormAction.None -> Unit
             }
@@ -160,15 +191,16 @@ class MtuiApp(
 
     // Focus stays on the version row, and a failure leaves the form as it was
     private fun switchVersion(version: MicronautVersion) {
+        val chosen = formScreen.form.chosen
         screen = Screen.Form(switchingTo = version)
         background(
-            work = { catalogLoader.loadOptions(version.server).mapLeft { it.message } },
+            work = { catalogLoader.switchServer(chosen, version).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
                 { message -> screen = Screen.Form(error = message) },
-                { options ->
-                    formScreen.form.switchTo(version, options)
+                {
+                    formScreen.form.switchTo(it)
                     screen = Screen.Form()
                 },
             )
@@ -184,9 +216,7 @@ class MtuiApp(
     // Enter can arrive both from the name box and as an unconsumed key, so anything but an idle form is ignored
     private fun submitName() {
         if ((screen as? Screen.Form)?.busy != false) return
-        ProjectName
-            .parse(formScreen.nameInput.text())
-            .mapLeft { it.message }
+        parsedName()
             .fold(
                 { showForm(it) },
                 { name ->
@@ -198,11 +228,12 @@ class MtuiApp(
             )
     }
 
+    private fun parsedName() = ProjectName.parse(formScreen.nameInput.text()).mapLeft { it.message }
+
     // Features depend only on server, type and language, so the picker is kept as it was left unless one changed
     private fun openPicker(name: ProjectName) {
         val chosen = formScreen.form.chosen
-        val wanted = Triple(chosen.version.server, chosen.type, chosen.language)
-        if (wanted == featuresFor) {
+        if (chosen.hasSameFeaturesAs(featuresFor)) {
             screen = Screen.Picker(chosen, name)
             runner().focusManager().setFocus(ROOT_ID)
             return
@@ -220,11 +251,61 @@ class MtuiApp(
                 { message -> showForm(message) },
                 { features ->
                     pickerScreen = FeaturePickerScreen(features, ROOT_ID, pickerScreen.picker.selected)
-                    featuresFor = wanted
+                    featuresFor = chosen
                     openPicker(name)
                 },
             )
         }
+    }
+
+    // Errors from Launch leave the focus on the option row, so pressing p again retries rather than typing a "p"
+    private fun previewFromForm() {
+        parsedName()
+            .fold(
+                { showForm(it) },
+                { name ->
+                    val chosen = formScreen.form.chosen
+                    screen = Screen.Form(previewing = true)
+                    preview(chosen, name, emptyList(), Screen.Form()) { Screen.Form(error = it) }
+                },
+            )
+    }
+
+    private fun previewFromPicker(
+        options: ProjectOptions,
+        name: ProjectName,
+    ) {
+        screen = Screen.Picker(options, name, previewing = true)
+        val back = Screen.Picker(options, name)
+        preview(options, name, pickerScreen.picker.selected, back) { back.copy(error = it) }
+    }
+
+    // back is the screen to restore on Esc; failed is the screen that shows Launch's message
+    private fun preview(
+        options: ProjectOptions,
+        name: ProjectName,
+        features: List<String>,
+        back: Screen,
+        failed: (String) -> Screen,
+    ) {
+        background(
+            work = { generator.preview(options, name, features).mapLeft { it.message } },
+            onFailure = { (it.message ?: it.toString()).left() },
+        ) { result ->
+            result.fold(
+                { message -> screen = failed(message) },
+                {
+                    screen = Screen.Preview(options, name, back, PreviewScreen(FileBrowser(it)))
+                    runner().focusManager().setFocus(ROOT_ID)
+                },
+            )
+        }
+    }
+
+    private fun back(to: Screen) {
+        screen = to
+        val focus = runner().focusManager()
+        if (to is Screen.Form) formScreen.focusPreviewedRow(focus) else focus.setFocus(ROOT_ID)
     }
 
     private fun generate(
@@ -273,14 +354,24 @@ class MtuiApp(
             val error: String? = null,
             val fetching: Boolean = false,
             val switchingTo: MicronautVersion? = null,
+            val previewing: Boolean = false,
         ) : Screen {
-            val busy get() = fetching || switchingTo != null
+            val busy get() = fetching || switchingTo != null || previewing
         }
 
         data class Picker(
             val options: ProjectOptions,
             val name: ProjectName,
             val error: String? = null,
+            val previewing: Boolean = false,
+        ) : Screen
+
+        // back is the form or picker that Esc restores, as it was left
+        data class Preview(
+            val options: ProjectOptions,
+            val name: ProjectName,
+            val back: Screen,
+            val screen: PreviewScreen,
         ) : Screen
 
         data class Generating(

@@ -3,8 +3,8 @@ package com.leeturner.mtui.adapters.outbound.http
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.leeturner.mtui.domain.core.model.CatalogError
 import com.leeturner.mtui.domain.core.model.LaunchServer
-import com.leeturner.mtui.domain.core.model.VersionError
 import com.leeturner.wiremock.micronaut.ConfigureWireMock
 import com.leeturner.wiremock.micronaut.EnableWireMock
 import com.leeturner.wiremock.micronaut.InjectWireMock
@@ -25,7 +25,7 @@ import strikt.assertions.isEqualTo
     ),
     ConfigureWireMock(name = "snapshot", baseUrlProperties = ["mtui.launch.snapshot-url"]),
 )
-class MicronautLaunchVersionRetrieverTest {
+class MicronautLaunchCatalogVersionTest {
     @InjectWireMock("micronaut-launch")
     private lateinit var wireMock: WireMockServer
 
@@ -33,44 +33,47 @@ class MicronautLaunchVersionRetrieverTest {
     private lateinit var snapshot: WireMockServer
 
     @Inject
-    lateinit var retriever: MicronautLaunchVersionRetriever
+    lateinit var catalog: MicronautLaunchCatalog
 
     @Test
     fun `200 returns the micronaut version`() {
         stubVersions(okJson("/payloads/get-versions.json"))
 
-        expectThat(retriever.getMicronautVersion(LaunchServer.RELEASE)).isRight().get { value }.isEqualTo("5.2.2")
+        expectThat(catalog.getMicronautVersion(LaunchServer.RELEASE)).isRight().get { value }.isEqualTo("5.2.2")
     }
 
     @Test
     fun `missing micronaut version is an error`() {
         stubVersions(okJson("/payloads/get-versions-missing-micronaut.json"))
 
-        expectThat(retriever.getMicronautVersion(LaunchServer.RELEASE))
+        expectThat(catalog.getMicronautVersion(LaunchServer.RELEASE))
             .isLeft()
             .get { value }
-            .isEqualTo(VersionError(null, "No micronaut.version in /versions"))
+            .isEqualTo(CatalogError("No micronaut.version in /versions"))
     }
 
     @Test
-    fun `500 is an error with its status`() {
+    fun `500 is an error`() {
         stubVersions(WireMock.aResponse().withStatus(500))
 
-        expectThat(retriever.getMicronautVersion(LaunchServer.RELEASE)).isLeft().get { value.status }.isEqualTo(500)
+        expectThat(catalog.getMicronautVersion(LaunchServer.RELEASE))
+            .isLeft()
+            .get { value.message }
+            .isEqualTo("Client 'micronaut-launch': Server Error")
     }
 
     @Test
     fun `404 is an error`() {
         stubVersions(WireMock.aResponse().withStatus(404))
 
-        expectThat(retriever.getMicronautVersion(LaunchServer.RELEASE)).isLeft()
+        expectThat(catalog.getMicronautVersion(LaunchServer.RELEASE)).isLeft()
     }
 
     @Test
     fun `snapshot server is called when it is chosen`() {
         stubVersions(okJson("/payloads/get-versions.json"), on = snapshot)
 
-        expectThat(retriever.getMicronautVersion(LaunchServer.SNAPSHOT)).isRight()
+        expectThat(catalog.getMicronautVersion(LaunchServer.SNAPSHOT)).isRight()
         expectThat(wireMock.allServeEvents).isEmpty()
     }
 

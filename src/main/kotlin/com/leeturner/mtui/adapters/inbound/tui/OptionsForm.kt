@@ -3,7 +3,7 @@ package com.leeturner.mtui.adapters.inbound.tui
 import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptions
-import com.leeturner.mtui.domain.core.model.onServer
+import com.leeturner.mtui.domain.core.model.SwitchedServer
 import com.leeturner.mtui.domain.core.model.withLanguage
 
 enum class OptionRow(
@@ -43,12 +43,9 @@ class OptionsForm(
     // Null past either end; switching needs that server's options, so it's done by switchTo once they've loaded
     fun neighbourVersion(by: Int): MicronautVersion? = versions.getOrNull(versions.indexOf(chosen.version) + by)
 
-    fun switchTo(
-        version: MicronautVersion,
-        options: SelectOptions,
-    ) {
-        this.options = options
-        chosen = chosen.onServer(version, options)
+    fun switchTo(switched: SwitchedServer) {
+        options = switched.options
+        chosen = switched.chosen
     }
 
     fun next(row: OptionRow) = step(row, 1)

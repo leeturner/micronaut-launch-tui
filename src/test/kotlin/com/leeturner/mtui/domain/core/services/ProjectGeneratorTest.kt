@@ -11,8 +11,10 @@ import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectAlreadyExists
+import com.leeturner.mtui.domain.core.model.ProjectFile
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
+import com.leeturner.mtui.domain.core.model.ProjectPreview
 import com.leeturner.mtui.domain.core.model.ProjectRejected
 import com.leeturner.mtui.domain.core.model.TestFramework
 import com.leeturner.mtui.domain.core.ports.ProjectCreator
@@ -103,9 +105,20 @@ class ProjectGeneratorTest {
         expectThat(generator.checkAvailable(name, into)).isRight()
     }
 
+    @Test
+    fun `preview passes through without checking the folder`() {
+        writer.existing = true
+
+        expectThat(generator.preview(options, name, listOf("data-jdbc"))).isRight()
+        expectThat(creator.lastOptions).isEqualTo(options)
+        expectThat(creator.lastName).isEqualTo(name)
+        expectThat(creator.lastFeatures).isEqualTo(listOf("data-jdbc"))
+    }
+
     private class FakeCreator : ProjectCreator {
         var calls = 0
         var lastOptions: ProjectOptions? = null
+        var lastName: ProjectName? = null
         var lastFeatures: List<String>? = null
         var result: Either<GenerateProjectError, ByteArray> = byteArrayOf().right()
 
@@ -118,6 +131,17 @@ class ProjectGeneratorTest {
             lastOptions = options
             lastFeatures = features
             return result
+        }
+
+        override fun previewProject(
+            options: ProjectOptions,
+            name: ProjectName,
+            features: List<String>,
+        ): Either<GenerateProjectError, ProjectPreview> {
+            lastOptions = options
+            lastName = name
+            lastFeatures = features
+            return ProjectPreview(listOf(ProjectFile("a", ""))).right()
         }
     }
 

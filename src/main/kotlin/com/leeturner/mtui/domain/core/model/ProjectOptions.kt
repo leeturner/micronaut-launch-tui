@@ -51,3 +51,7 @@ fun ProjectOptions.onServer(
         test = options.testFrameworks.firstOrNull { it.value == test.value } ?: options.defaultTestFramework,
         jdk = options.jdkVersions.firstOrNull { it.value == jdk.value } ?: options.defaultJdkVersion,
     )
+
+// Features depend only on server, type and language, so changing build, test or JDK keeps the fetched list
+fun ProjectOptions.hasSameFeaturesAs(other: ProjectOptions?): Boolean =
+    other != null && version.server == other.version.server && type == other.type && language == other.language

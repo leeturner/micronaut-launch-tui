@@ -7,12 +7,11 @@ import com.leeturner.mtui.domain.core.model.GenerateProjectError
 import com.leeturner.mtui.domain.core.model.ProjectAlreadyExists
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
+import com.leeturner.mtui.domain.core.model.ProjectPreview
 import com.leeturner.mtui.domain.core.ports.ProjectCreator
 import com.leeturner.mtui.domain.core.ports.ProjectWriter
-import jakarta.inject.Singleton
 import java.nio.file.Path
 
-@Singleton
 class ProjectGenerator(
     private val creator: ProjectCreator,
     private val writer: ProjectWriter,
@@ -29,6 +28,12 @@ class ProjectGenerator(
             val zip = creator.createProject(options, name, features).bind()
             writer.write(zip, into).bind()
         }
+
+    fun preview(
+        options: ProjectOptions,
+        name: ProjectName,
+        features: List<String>,
+    ): Either<GenerateProjectError, ProjectPreview> = creator.previewProject(options, name, features)
 
     fun checkAvailable(
         name: ProjectName,

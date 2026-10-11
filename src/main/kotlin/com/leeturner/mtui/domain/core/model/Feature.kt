@@ -9,7 +9,10 @@ data class Feature(
     val community: Boolean,
 )
 
-data class FeaturesError(
-    val status: Int?,
-    val message: String,
-)
+// A blank term matches every feature; otherwise the trimmed term is looked for in the name, title or description
+fun Feature.matches(term: String): Boolean {
+    val trimmed = term.trim()
+    return name.contains(trimmed, ignoreCase = true) ||
+        title.contains(trimmed, ignoreCase = true) ||
+        description.contains(trimmed, ignoreCase = true)
+}

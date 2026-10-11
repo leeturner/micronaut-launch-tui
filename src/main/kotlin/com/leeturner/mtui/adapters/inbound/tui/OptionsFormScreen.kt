@@ -20,6 +20,8 @@ sealed interface FormAction {
 
     data object Quit : FormAction
 
+    data object Preview : FormAction
+
     data class SwitchVersion(
         val version: MicronautVersion,
     ) : FormAction
@@ -33,10 +35,14 @@ class OptionsFormScreen(
     val form = OptionsForm(options, versions)
     val nameInput = TextInputState()
 
+    // The row `p` was pressed on, focused again on the way back from the preview
+    private var previewedFrom = OptionRow.entries.first()
+
     // While switching version the rows are dimmed, because they still show the previous server's options
     fun render(
         error: String?,
         fetching: Boolean,
+        previewing: Boolean,
         switchingTo: MicronautVersion?,
         focus: FocusManager,
         onSubmit: () -> Unit,
@@ -52,6 +58,7 @@ class OptionsFormScreen(
                 .onSubmit(onSubmit),
             when {
                 fetching -> row(spinner(), text(" Fetching features…"))
+                previewing -> row(spinner(), text(" Fetching preview…"))
                 switchingTo != null -> row(spinner(), text(" Loading ${switchingTo.label} options…"))
                 else -> text(error ?: "").bold()
             },
@@ -60,10 +67,12 @@ class OptionsFormScreen(
                 .map { optionRow(it, focus.isFocused(it.focusId), dimmed = switchingTo != null) }
                 .toTypedArray(),
             text(""),
-            text("Tab/j/k move · ←/→ h/l change · Enter choose features · Esc quit").dim(),
+            text("Tab/j/k move · ←/→ h/l change · p preview · Enter choose features · Esc quit").dim(),
         )
 
     fun focusName(focus: FocusManager) = focus.setFocus(NAME_INPUT_ID)
+
+    fun focusPreviewedRow(focus: FocusManager) = focus.setFocus(previewedFrom.focusId)
 
     // Only keys the name box didn't consume arrive here, so letters typed into it are never treated as commands
     fun handleKey(
@@ -82,6 +91,11 @@ class OptionsFormScreen(
             else -> {
                 val row = OptionRow.entries.firstOrNull { focus.isFocused(it.focusId) }
                 when {
+                    row != null && event.isChar('p') -> {
+                        previewedFrom = row
+                        FormAction.Preview
+                    }
+
                     row != null -> {
                         handleRowKey(event, row, focus)
                     }

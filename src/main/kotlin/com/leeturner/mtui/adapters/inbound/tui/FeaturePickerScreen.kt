@@ -16,7 +16,7 @@ import dev.tamboui.toolkit.focus.FocusManager
 import dev.tamboui.tui.event.KeyEvent
 import dev.tamboui.widgets.input.TextInputState
 
-enum class PickerAction { NONE, GENERATE, BACK, QUIT }
+enum class PickerAction { NONE, GENERATE, PREVIEW, BACK, QUIT }
 
 // The feature picker screen; kept for the whole run so the selection survives going back to the name
 class FeaturePickerScreen(
@@ -63,7 +63,7 @@ class FeaturePickerScreen(
             ).fill(),
             text(picker.highlighted?.description ?: "").dim().length(1),
             status.length(1),
-            text("j/k move · Space toggle · / search · x clear · Enter generate · Esc back").dim().length(1),
+            text(HINTS).dim().length(1),
         )
     }
 
@@ -73,6 +73,7 @@ class FeaturePickerScreen(
     ): PickerAction =
         when {
             focus.isFocused(SEARCH_INPUT_ID) -> handleSearchKey(event, focus)
+            event.isChar('p') -> PickerAction.PREVIEW
             else -> handleListKey(event, focus)
         }
 
@@ -143,18 +144,20 @@ class FeaturePickerScreen(
     }
 
     companion object {
+        // A loading message shows with a spinner in place of the error
         fun status(
             error: String?,
-            generating: Boolean,
-        ): StyledElement<*> = if (generating) row(spinner(), text(" Generating…")) else text(error ?: "").bold()
+            loading: String?,
+        ): StyledElement<*> = if (loading != null) row(spinner(), text(" $loading")) else text(error ?: "").bold()
 
         private const val SEARCH_INPUT_ID = "search"
+        private const val HINTS = "j/k move · Space toggle · / search · x clear · p preview · Enter generate · Esc back"
         private const val NAME_COLUMN_WIDTH = 30
         private const val SELECTED_PANE_WIDTH = 32
     }
 }
 
-private fun ProjectOptions.summary(): String =
+internal fun ProjectOptions.summary(): String =
     listOf(
         version.label,
         type.label,

@@ -3,76 +3,50 @@ package com.leeturner.mtui.adapters.outbound.http
 import arrow.core.Either
 import arrow.core.raise.either
 import arrow.core.toNonEmptyListOrNull
-import com.leeturner.mtui.adapters.outbound.http.client.api.MicronautLaunchDefaultApi
 import com.leeturner.mtui.adapters.outbound.http.client.model.MicronautLaunchApplicationTypeInfo
 import com.leeturner.mtui.adapters.outbound.http.client.model.MicronautLaunchBuildToolInfo
+import com.leeturner.mtui.adapters.outbound.http.client.model.MicronautLaunchFeature
 import com.leeturner.mtui.adapters.outbound.http.client.model.MicronautLaunchJdkVersionInfo
 import com.leeturner.mtui.adapters.outbound.http.client.model.MicronautLaunchLanguageInfo
 import com.leeturner.mtui.adapters.outbound.http.client.model.MicronautLaunchSelectOptions
 import com.leeturner.mtui.adapters.outbound.http.client.model.MicronautLaunchTestFrameworkInfo
 import com.leeturner.mtui.domain.core.model.ApplicationType
 import com.leeturner.mtui.domain.core.model.BuildType
-import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
+import com.leeturner.mtui.domain.core.model.CatalogError
+import com.leeturner.mtui.domain.core.model.Feature
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LanguageDefaults
-import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.SelectOptions
-import com.leeturner.mtui.domain.core.model.SelectOptionsError
 import com.leeturner.mtui.domain.core.model.TestFramework
-import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
-import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
-import io.micronaut.http.client.exceptions.HttpClientException
-import io.micronaut.http.client.exceptions.HttpClientResponseException
-import jakarta.inject.Singleton
 
-@Singleton
-class MicronautLaunchSelectOptionRetriever(
-    private val micronautLaunchDefaultApi: MicronautLaunchDefaultApi,
-) : SelectOptionRetriever {
-    override fun getSelectOptions(server: LaunchServer): Either<SelectOptionsError, SelectOptions> =
-        either {
-            try {
-                val micronautLaunchSelectOptions = onServer(server) { micronautLaunchDefaultApi.selectOptions() }
-                micronautLaunchSelectOptions.toSelectOptions().bind()
-            } catch (e: HttpClientException) {
-                raise(
-                    UnexpectedSelectOptionRetrievalError(
-                        status = (e as? HttpClientResponseException)?.status?.code,
-                        message = e.message ?: "Unknown error",
-                    ),
-                )
-            }
-        }
-}
-
-private fun MicronautLaunchSelectOptions.toSelectOptions(): Either<SelectOptionsError, SelectOptions> =
+internal fun MicronautLaunchSelectOptions.toSelectOptions(): Either<CatalogError, SelectOptions> =
     either {
         val types =
             type?.options?.map { it.toApplicationType().bind() }?.toNonEmptyListOrNull()
-                ?: raise(EmptySelectOptionsError("No application types found in Micronaut Launch select options"))
+                ?: raise(CatalogError("No application types found in Micronaut Launch select options"))
         val defaultType = types.firstOrNull { it.value == type?.defaultOption?.value?.value } ?: types.head
 
         val jdkVersions =
             jdkVersion?.options?.map { it.toJdkVersion() }?.toNonEmptyListOrNull()
-                ?: raise(EmptySelectOptionsError("No JDK versions found in Micronaut Launch select options"))
+                ?: raise(CatalogError("No JDK versions found in Micronaut Launch select options"))
         val defaultJdkVersion =
             jdkVersions.firstOrNull { it.value == jdkVersion?.defaultOption?.value } ?: jdkVersions.head
 
         val languages =
             lang?.options?.map { it.toLanguage().bind() }?.toNonEmptyListOrNull()
-                ?: raise(EmptySelectOptionsError("No languages found in Micronaut Launch select options"))
+                ?: raise(CatalogError("No languages found in Micronaut Launch select options"))
         val defaultLanguage = languages.firstOrNull { it.value == lang?.defaultOption?.value?.value } ?: languages.head
 
         val testFrameworks =
             test?.options?.map { it.toTestFramework() }?.toNonEmptyListOrNull()
-                ?: raise(EmptySelectOptionsError("No test frameworks found in Micronaut Launch select options"))
+                ?: raise(CatalogError("No test frameworks found in Micronaut Launch select options"))
         val defaultTestFramework =
             testFrameworks.firstOrNull { it.value == test?.defaultOption?.value?.value } ?: testFrameworks.head
 
         val buildTypes =
             build?.options?.map { it.toBuildType() }?.toNonEmptyListOrNull()
-                ?: raise(EmptySelectOptionsError("No build types found in Micronaut Launch select options"))
+                ?: raise(CatalogError("No build types found in Micronaut Launch select options"))
         val defaultBuildType =
             buildTypes.firstOrNull { it.value == build?.defaultOption?.value?.value } ?: buildTypes.head
 
@@ -90,7 +64,7 @@ private fun MicronautLaunchSelectOptions.toSelectOptions(): Either<SelectOptions
         )
     }
 
-private fun MicronautLaunchApplicationTypeInfo.toApplicationType(): Either<SelectOptionsError, ApplicationType> =
+private fun MicronautLaunchApplicationTypeInfo.toApplicationType(): Either<CatalogError, ApplicationType> =
     either {
         ApplicationType(
             title = title ?: "",
@@ -98,7 +72,7 @@ private fun MicronautLaunchApplicationTypeInfo.toApplicationType(): Either<Selec
             description = description ?: "",
             value =
                 value?.value
-                    ?: raise(EmptySelectOptionsError("Missing value for application type '$name'")),
+                    ?: raise(CatalogError("Missing value for application type '$name'")),
             label = label ?: "",
         )
     }
@@ -111,7 +85,7 @@ private fun MicronautLaunchJdkVersionInfo.toJdkVersion(): JdkVersion =
         label = label ?: "",
     )
 
-private fun MicronautLaunchLanguageInfo.toLanguage(): Either<SelectOptionsError, Language> =
+private fun MicronautLaunchLanguageInfo.toLanguage(): Either<CatalogError, Language> =
     either {
         Language(
             extension = extension ?: "",
@@ -119,7 +93,7 @@ private fun MicronautLaunchLanguageInfo.toLanguage(): Either<SelectOptionsError,
             name = name,
             value =
                 value?.value
-                    ?: raise(EmptySelectOptionsError("Missing value for language '$name'")),
+                    ?: raise(CatalogError("Missing value for language '$name'")),
             label = label ?: "",
             defaults = defaults?.let { LanguageDefaults(test = it.test.value, build = it.build.value) },
         )
@@ -139,3 +113,16 @@ private fun MicronautLaunchBuildToolInfo.toBuildType(): BuildType =
         value = value.value,
         label = label,
     )
+
+// Launch marks every field optional, so a feature without a name is dropped and the rest get defaults
+internal fun MicronautLaunchFeature.toFeature(): Feature? =
+    name?.let {
+        Feature(
+            name = it,
+            title = title.orEmpty(),
+            description = description.orEmpty(),
+            category = category ?: "Other",
+            preview = preview ?: false,
+            community = community ?: false,
+        )
+    }

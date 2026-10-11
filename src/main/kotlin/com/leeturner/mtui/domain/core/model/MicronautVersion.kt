@@ -16,8 +16,3 @@ data class MicronautVersion(
         fun fallback(server: LaunchServer): MicronautVersion = MicronautVersion(server, server.fallbackLabel)
     }
 }
-
-data class VersionError(
-    val status: Int?,
-    val message: String,
-)

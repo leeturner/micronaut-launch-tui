@@ -18,6 +18,7 @@ strikt = "0.35.1"
 arrow = "2.2.3"
 wiremock-micronaut = "0.2.0"
 tamboui = "0.5.0"
+archunit = "1.5.1"
 
 [libraries]
 
@@ -52,6 +53,7 @@ junit-platform-suite = { module = "org.junit.platform:junit-platform-suite-engin
 strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
 strikt-arrow = { module = "io.strikt:strikt-arrow", version.ref = "strikt" }
 wiremock-micronaut = { module = "io.github.leeturner:wiremock-micronaut", version.ref = "wiremock-micronaut" }
+archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
