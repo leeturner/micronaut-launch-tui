@@ -25,10 +25,12 @@ import strikt.api.expectThat
 import strikt.arrow.isLeft
 import strikt.arrow.isRight
 import strikt.assertions.contains
+import strikt.assertions.doesNotContain
 import strikt.assertions.isA
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
+import strikt.assertions.startsWith
 
 @MicronautTest
 @EnableWireMock(
@@ -240,6 +242,112 @@ class MicronautLaunchProjectCreatorTest {
             .get { value.toList() }
             .isEqualTo(zip.toList())
         expectThat(wireMock.allServeEvents).isEmpty()
+    }
+
+    @Test
+    fun `preview returns the text files and drops binary ones`() {
+        stubPreview(
+            WireMock
+                .aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(javaClass.getResource("/payloads/preview-app.json")!!.readText()),
+        )
+
+        val preview = creator.previewProject(options, name("com.example.demo"), emptyList())
+
+        expectThat(preview)
+            .isRight()
+            .get { value.files.map { it.path } }
+            .doesNotContain("gradle/wrapper/gradle-wrapper.jar")
+        expectThat(preview)
+            .isRight()
+            .get { value.files[value.buildFileIndex].content }
+            .startsWith("plugins {")
+    }
+
+    @Test
+    fun `preview sends the chosen options`() {
+        stubPreview(
+            WireMock
+                .aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("""{"contents": {"a": "b"}}"""),
+        )
+
+        creator.previewProject(options, name("com.example.demo"), listOf("data-jdbc"))
+
+        wireMock.verify(
+            WireMock
+                .getRequestedFor(WireMock.urlPathEqualTo("/preview/DEFAULT/com.example.demo"))
+                .withQueryParam("lang", WireMock.equalTo("KOTLIN"))
+                .withQueryParam("build", WireMock.equalTo("GRADLE_KOTLIN"))
+                .withQueryParam("test", WireMock.equalTo("KOTEST"))
+                .withQueryParam("javaVersion", WireMock.equalTo("JDK_21"))
+                .withQueryParam("features", WireMock.equalTo("data-jdbc")),
+        )
+    }
+
+    @Test
+    fun `preview 400 surfaces launch's message`() {
+        stubPreview(
+            WireMock
+                .aResponse()
+                .withStatus(400)
+                .withHeader("Content-Type", "application/json")
+                .withBody(javaClass.getResource("/payloads/create-app-invalid-name.json")!!.readText()),
+            "MyApp",
+        )
+
+        expectThat(creator.previewProject(options, name("MyApp"), emptyList()))
+            .isLeft()
+            .get { value }
+            .isA<ProjectRejected>()
+            .get { message }
+            .isEqualTo("Invalid package name: MyApp")
+    }
+
+    @Test
+    fun `preview with no text files is an error`() {
+        stubPreview(
+            WireMock
+                .aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("""{"contents": {"a.jar": null}}"""),
+        )
+
+        expectThat(creator.previewProject(options, name("com.example.demo"), emptyList()))
+            .isLeft()
+            .get { value }
+            .isA<UnexpectedProjectCreationError>()
+            .get { message }
+            .isEqualTo("Launch returned no files to preview")
+    }
+
+    @Test
+    fun `preview goes to the snapshot server when it is chosen`() {
+        stubPreview(
+            WireMock
+                .aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("""{"contents": {"a": "b"}}"""),
+            on = snapshot,
+        )
+        val onSnapshot = options.copy(version = MicronautVersion(LaunchServer.SNAPSHOT, "5.2.3-SNAPSHOT"))
+
+        expectThat(creator.previewProject(onSnapshot, name("com.example.demo"), emptyList())).isRight()
+        expectThat(wireMock.allServeEvents).isEmpty()
+    }
+
+    private fun stubPreview(
+        response: ResponseDefinitionBuilder,
+        name: String = "com.example.demo",
+        on: WireMockServer = wireMock,
+    ) {
+        on.stubFor(WireMock.get(WireMock.urlPathEqualTo("/preview/DEFAULT/$name")).willReturn(response))
     }
 
     private fun name(raw: String) = ProjectName.parse(raw).getOrNull()!!

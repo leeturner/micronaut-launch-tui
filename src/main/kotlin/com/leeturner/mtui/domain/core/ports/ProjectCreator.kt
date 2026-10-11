@@ -4,6 +4,7 @@ import arrow.core.Either
 import com.leeturner.mtui.domain.core.model.GenerateProjectError
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
+import com.leeturner.mtui.domain.core.model.ProjectPreview
 
 interface ProjectCreator {
     fun createProject(
@@ -11,4 +12,10 @@ interface ProjectCreator {
         name: ProjectName,
         features: List<String>,
     ): Either<GenerateProjectError, ByteArray>
+
+    fun previewProject(
+        options: ProjectOptions,
+        name: ProjectName,
+        features: List<String>,
+    ): Either<GenerateProjectError, ProjectPreview>
 }
