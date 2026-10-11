@@ -54,7 +54,7 @@ class MtuiApp(
 
     override fun onStart() {
         background(
-            work = { catalogLoader.loadOptions().mapLeft { it.message } },
+            work = { catalogLoader.loadOptions(LaunchServer.RELEASE).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
@@ -188,7 +188,9 @@ class MtuiApp(
         // Moved off the name box so typing is ignored along with every other key while fetching
         runner().focusManager().setFocus(ROOT_ID)
         background(
-            work = { catalogLoader.loadFeatures(chosen.type, chosen.language).mapLeft { it.message } },
+            work = {
+                catalogLoader.loadFeatures(chosen.version.server, chosen.type, chosen.language).mapLeft { it.message }
+            },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(

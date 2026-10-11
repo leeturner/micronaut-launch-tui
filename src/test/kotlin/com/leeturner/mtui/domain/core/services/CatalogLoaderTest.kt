@@ -12,6 +12,7 @@ import com.leeturner.mtui.domain.core.model.Feature
 import com.leeturner.mtui.domain.core.model.FeaturesError
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
+import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptionsError
 import com.leeturner.mtui.domain.core.model.TestFramework
@@ -47,7 +48,8 @@ class CatalogLoaderTest {
 
     @Test
     fun `options are loaded`() {
-        expectThat(loader.loadOptions()).isRight().get { value }.isEqualTo(options)
+        expectThat(loader.loadOptions(LaunchServer.SNAPSHOT)).isRight().get { value }.isEqualTo(options)
+        expectThat(selectOptionRetriever.requested).isEqualTo(LaunchServer.SNAPSHOT)
         expectThat(featureRetriever.requested).isNull()
     }
 
@@ -55,37 +57,50 @@ class CatalogLoaderTest {
     fun `options failure is reported`() {
         selectOptionRetriever.result = EmptySelectOptionsError("No application types").left()
 
-        expectThat(loader.loadOptions()).isLeft().get { value }.isEqualTo(CatalogError("No application types"))
+        expectThat(loader.loadOptions(LaunchServer.RELEASE))
+            .isLeft()
+            .get { value }
+            .isEqualTo(CatalogError("No application types"))
     }
 
     @Test
-    fun `features are loaded for the given type and language`() {
-        expectThat(loader.loadFeatures(cli, kotlin)).isRight().get { value }.isEqualTo(listOf(ksp))
-        expectThat(featureRetriever.requested).isEqualTo(cli to kotlin)
+    fun `features are loaded for the given server, type and language`() {
+        expectThat(loader.loadFeatures(LaunchServer.SNAPSHOT, cli, kotlin)).isRight().get { value }.isEqualTo(
+            listOf(ksp),
+        )
+        expectThat(featureRetriever.requested).isEqualTo(Triple(LaunchServer.SNAPSHOT, cli, kotlin))
     }
 
     @Test
     fun `features failure is reported`() {
         featureRetriever.result = FeaturesError(500, "Server Error").left()
 
-        expectThat(loader.loadFeatures(cli, kotlin)).isLeft().get { value }.isEqualTo(CatalogError("Server Error"))
+        expectThat(loader.loadFeatures(LaunchServer.RELEASE, cli, kotlin))
+            .isLeft()
+            .get { value }
+            .isEqualTo(CatalogError("Server Error"))
     }
 
     private inner class FakeSelectOptionRetriever : SelectOptionRetriever {
         var result: Either<SelectOptionsError, SelectOptions> = options.right()
+        var requested: LaunchServer? = null
 
-        override fun getSelectOptions() = result
+        override fun getSelectOptions(server: LaunchServer): Either<SelectOptionsError, SelectOptions> {
+            requested = server
+            return result
+        }
     }
 
     private inner class FakeFeatureRetriever : FeatureRetriever {
         var result: Either<FeaturesError, List<Feature>> = listOf(ksp).right()
-        var requested: Pair<ApplicationType, Language>? = null
+        var requested: Triple<LaunchServer, ApplicationType, Language>? = null
 
         override fun getFeatures(
+            server: LaunchServer,
             type: ApplicationType,
             language: Language,
         ): Either<FeaturesError, List<Feature>> {
-            requested = type to language
+            requested = Triple(server, type, language)
             return result
         }
     }

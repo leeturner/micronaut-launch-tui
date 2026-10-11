@@ -5,6 +5,7 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.http.Fault
 import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
 import com.leeturner.mtui.domain.core.model.LanguageDefaults
+import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.UnexpectedSelectOptionRetrievalError
 import com.leeturner.wiremock.micronaut.ConfigureWireMock
 import com.leeturner.wiremock.micronaut.EnableWireMock
@@ -17,6 +18,7 @@ import strikt.arrow.isLeft
 import strikt.arrow.isRight
 import strikt.assertions.hasSize
 import strikt.assertions.isA
+import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
 import strikt.assertions.map
@@ -27,10 +29,14 @@ import strikt.assertions.map
         name = "micronaut-launch",
         baseUrlProperties = ["micronaut.http.services.micronaut-launch.url"],
     ),
+    ConfigureWireMock(name = "snapshot", baseUrlProperties = ["mtui.launch.snapshot-url"]),
 )
 class MicronautLaunchSelectOptionRetrieverTest {
     @InjectWireMock("micronaut-launch")
     private lateinit var wireMock: WireMockServer
+
+    @InjectWireMock("snapshot")
+    private lateinit var snapshot: WireMockServer
 
     @Inject
     lateinit var selectOptionsRetriever: MicronautLaunchSelectOptionRetriever
@@ -39,7 +45,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
     fun `getSelectOptions returns correct data from micronaut launch api`() {
         stubSelectOptions("get-select-options.json")
 
-        val result = selectOptionsRetriever.getSelectOptions()
+        val result = selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)
 
         expectThat(result).isRight().and {
             get { value.defaultType.value }.isEqualTo("DEFAULT")
@@ -74,7 +80,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
     fun `getSelectOptions falls back to the first option when a default is missing or not in the options`() {
         stubSelectOptions("get-select-options-invalid-defaults.json")
 
-        val result = selectOptionsRetriever.getSelectOptions()
+        val result = selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)
 
         expectThat(result).isRight().and {
             get { value.defaultType.value }.isEqualTo("DEFAULT")
@@ -94,7 +100,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
                 ),
         )
 
-        val result = selectOptionsRetriever.getSelectOptions()
+        val result = selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)
 
         expectThat(result).isLeft().and {
             get { value }.isA<UnexpectedSelectOptionRetrievalError>().and {
@@ -112,7 +118,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
                 .willReturn(WireMock.aResponse().withFault(Fault.CONNECTION_RESET_BY_PEER)),
         )
 
-        val result = selectOptionsRetriever.getSelectOptions()
+        val result = selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)
 
         expectThat(result).isLeft().and {
             get { value }.isA<UnexpectedSelectOptionRetrievalError>().and {
@@ -125,7 +131,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
     fun `getSelectOptions returns a left when the api returns an empty list of application types`() {
         stubSelectOptions("get-select-options-empty-types.json")
 
-        val result = selectOptionsRetriever.getSelectOptions()
+        val result = selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)
 
         expectThat(result).isLeft().and {
             get { value }.isA<EmptySelectOptionsError>().and {
@@ -138,7 +144,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
     fun `getSelectOptions returns a left when an application type is missing its value`() {
         stubSelectOptions("get-select-options-missing-type-value.json")
 
-        val result = selectOptionsRetriever.getSelectOptions()
+        val result = selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)
 
         expectThat(result).isLeft().and {
             get { value }.isA<EmptySelectOptionsError>().and {
@@ -151,7 +157,7 @@ class MicronautLaunchSelectOptionRetrieverTest {
     fun `getSelectOptions returns a left when a language is missing its value`() {
         stubSelectOptions("get-select-options-missing-language-value.json")
 
-        val result = selectOptionsRetriever.getSelectOptions()
+        val result = selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)
 
         expectThat(result).isLeft().and {
             get { value }.isA<EmptySelectOptionsError>().and {
@@ -160,10 +166,29 @@ class MicronautLaunchSelectOptionRetrieverTest {
         }
     }
 
-    private fun stubSelectOptions(payloadFile: String) {
+    @Test
+    fun `snapshot server is called when it is chosen`() {
+        stubSelectOptions("get-select-options.json", on = snapshot)
+
+        expectThat(selectOptionsRetriever.getSelectOptions(LaunchServer.SNAPSHOT)).isRight()
+        expectThat(wireMock.allServeEvents).isEmpty()
+    }
+
+    @Test
+    fun `release server is called when it is chosen`() {
+        stubSelectOptions("get-select-options.json")
+
+        expectThat(selectOptionsRetriever.getSelectOptions(LaunchServer.RELEASE)).isRight()
+        expectThat(snapshot.allServeEvents).isEmpty()
+    }
+
+    private fun stubSelectOptions(
+        payloadFile: String,
+        on: WireMockServer = wireMock,
+    ) {
         val jsonPayload = javaClass.getResource("/payloads/$payloadFile")!!.readText()
 
-        wireMock.stubFor(
+        on.stubFor(
             WireMock
                 .get(WireMock.urlEqualTo("/select-options"))
                 .willReturn(

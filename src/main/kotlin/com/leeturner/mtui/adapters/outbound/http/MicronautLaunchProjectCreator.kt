@@ -37,8 +37,8 @@ class MicronautLaunchProjectCreator(
             // createApp's test parameter uses Launch's second test framework enum, which also has KOTLINTEST
             val test = lookup(MicronautLaunchTestFramework1.VALUE_MAPPING, "test framework", options.test.value)
             try {
-                micronautLaunchDefaultApi
-                    .createApp(
+                onServer(options.version.server) {
+                    micronautLaunchDefaultApi.createApp(
                         type = type,
                         name = name.value,
                         features = features.ifEmpty { null },
@@ -46,7 +46,8 @@ class MicronautLaunchProjectCreator(
                         test = test,
                         lang = lang,
                         javaVersion = options.jdk.value,
-                    ).toByteArray()
+                    )
+                }.toByteArray()
             } catch (e: HttpClientResponseException) {
                 if (e.status == HttpStatus.BAD_REQUEST) {
                     raise(ProjectRejected(e.launchMessage() ?: e.status.reason))
