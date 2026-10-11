@@ -6,16 +6,27 @@ import com.leeturner.mtui.domain.core.model.CatalogError
 import com.leeturner.mtui.domain.core.model.Feature
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.ports.FeatureRetriever
 import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
+import com.leeturner.mtui.domain.core.ports.VersionRetriever
 import jakarta.inject.Singleton
 
 @Singleton
 class CatalogLoader(
     private val selectOptionRetriever: SelectOptionRetriever,
     private val featureRetriever: FeatureRetriever,
+    private val versionRetriever: VersionRetriever,
 ) {
+    // A label is only cosmetic, so a server whose version can't be read is still offered
+    fun loadVersions(): List<MicronautVersion> =
+        LaunchServer.entries.map { server ->
+            versionRetriever
+                .getMicronautVersion(server)
+                .fold({ MicronautVersion.fallback(server) }, { MicronautVersion(server, it) })
+        }
+
     fun loadOptions(server: LaunchServer): Either<CatalogError, SelectOptions> =
         selectOptionRetriever.getSelectOptions(server).mapLeft { error -> CatalogError(error.message) }
 

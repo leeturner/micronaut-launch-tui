@@ -13,11 +13,14 @@ import com.leeturner.mtui.domain.core.model.FeaturesError
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptionsError
 import com.leeturner.mtui.domain.core.model.TestFramework
+import com.leeturner.mtui.domain.core.model.VersionError
 import com.leeturner.mtui.domain.core.ports.FeatureRetriever
 import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
+import com.leeturner.mtui.domain.core.ports.VersionRetriever
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.arrow.isLeft
@@ -44,7 +47,8 @@ class CatalogLoaderTest {
     private val ksp = Feature("ksp", "KSP", "", "Development Tools", preview = false, community = false)
     private val selectOptionRetriever = FakeSelectOptionRetriever()
     private val featureRetriever = FakeFeatureRetriever()
-    private val loader = CatalogLoader(selectOptionRetriever, featureRetriever)
+    private val versionRetriever = FakeVersionRetriever()
+    private val loader = CatalogLoader(selectOptionRetriever, featureRetriever, versionRetriever)
 
     @Test
     fun `options are loaded`() {
@@ -79,6 +83,30 @@ class CatalogLoaderTest {
             .isLeft()
             .get { value }
             .isEqualTo(CatalogError("Server Error"))
+    }
+
+    @Test
+    fun `versions are labelled from each server`() {
+        expectThat(loader.loadVersions()).isEqualTo(
+            listOf(
+                MicronautVersion(LaunchServer.RELEASE, "5.2.2"),
+                MicronautVersion(LaunchServer.SNAPSHOT, "5.2.3-SNAPSHOT"),
+            ),
+        )
+    }
+
+    @Test
+    fun `a server whose version can't be read gets its fallback label`() {
+        versionRetriever.results[LaunchServer.SNAPSHOT] = VersionError(null, "Connection refused").left()
+
+        expectThat(loader.loadVersions()[1]).isEqualTo(MicronautVersion(LaunchServer.SNAPSHOT, "Snapshot"))
+    }
+
+    private class FakeVersionRetriever : VersionRetriever {
+        val results: MutableMap<LaunchServer, Either<VersionError, String>> =
+            mutableMapOf(LaunchServer.RELEASE to "5.2.2".right(), LaunchServer.SNAPSHOT to "5.2.3-SNAPSHOT".right())
+
+        override fun getMicronautVersion(server: LaunchServer) = results.getValue(server)
     }
 
     private inner class FakeSelectOptionRetriever : SelectOptionRetriever {
