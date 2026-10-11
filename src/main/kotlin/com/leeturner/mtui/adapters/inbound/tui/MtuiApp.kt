@@ -1,9 +1,6 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
 import arrow.core.left
-import com.leeturner.mtui.domain.core.model.ApplicationType
-import com.leeturner.mtui.domain.core.model.Language
-import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
@@ -64,11 +61,7 @@ class MtuiApp(
 
     override fun onStart() {
         background(
-            work = {
-                // Fetched alongside the options and capped at VERSIONS_TIMEOUT, so labels never hold up start-up
-                val versions = CompletableFuture.supplyAsync { catalogLoader.loadVersions(VERSIONS_TIMEOUT) }
-                catalogLoader.loadOptions(LaunchServer.RELEASE).mapLeft { it.message }.map { it to versions.join() }
-            },
+            work = { catalogLoader.loadStart(VERSIONS_TIMEOUT).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
@@ -163,13 +156,13 @@ class MtuiApp(
     private fun switchVersion(version: MicronautVersion) {
         screen = Screen.Form(switchingTo = version)
         background(
-            work = { catalogLoader.loadOptions(version.server).mapLeft { it.message } },
+            work = { catalogLoader.switchServer(formScreen.form.chosen, version).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
                 { message -> screen = Screen.Form(error = message) },
-                { options ->
-                    formScreen.form.switchTo(version, options)
+                {
+                    formScreen.form.switchTo(it)
                     screen = Screen.Form()
                 },
             )

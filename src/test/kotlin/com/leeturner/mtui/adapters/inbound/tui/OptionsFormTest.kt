@@ -9,7 +9,9 @@ import com.leeturner.mtui.domain.core.model.LanguageDefaults
 import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.SelectOptions
+import com.leeturner.mtui.domain.core.model.SwitchedServer
 import com.leeturner.mtui.domain.core.model.TestFramework
+import com.leeturner.mtui.domain.core.model.onServer
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -125,7 +127,7 @@ class OptionsFormTest {
         expectThat(form.neighbourVersion(1)).isEqualTo(snapshot)
         expectThat(form.neighbourVersion(-1)).isNull()
 
-        form.switchTo(snapshot, options)
+        form.switchTo(SwitchedServer(options, form.chosen.onServer(snapshot, options)))
 
         expectThat(form.neighbourVersion(1)).isNull()
         expectThat(form.neighbourVersion(-1)).isEqualTo(release)
@@ -142,7 +144,7 @@ class OptionsFormTest {
     fun `switching keeps the choices and marks the new version`() {
         repeat(2) { form.next(OptionRow.LANGUAGE) }
 
-        form.switchTo(snapshot, options)
+        form.switchTo(SwitchedServer(options, form.chosen.onServer(snapshot, options)))
 
         expectThat(form.chosen.language.value).isEqualTo("KOTLIN")
         expectThat(form.choices(OptionRow.VERSION))
