@@ -6,11 +6,14 @@ import com.leeturner.mtui.domain.core.model.BuildType
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LanguageDefaults
+import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.model.TestFramework
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNull
 
 class OptionsFormTest {
     private val types =
@@ -55,7 +58,10 @@ class OptionsFormTest {
             buildTypes = builds,
             defaultBuildType = builds[1],
         )
-    private val form = OptionsForm(options)
+    private val release = MicronautVersion(LaunchServer.RELEASE, "5.2.2")
+    private val snapshot = MicronautVersion(LaunchServer.SNAPSHOT, "5.2.3-SNAPSHOT")
+    private val versions = listOf(release, snapshot)
+    private val form = OptionsForm(options, versions)
 
     @Test
     fun `starts on launch's defaults`() {
@@ -73,7 +79,7 @@ class OptionsFormTest {
     fun `unknown type falls back to launch's label`() {
         val withNewType = options.copy(types = nonEmptyListOf(types.first(), type("BATCH", "Batch Application")))
 
-        expectThat(OptionsForm(withNewType).choices(OptionRow.TYPE).map { it.label })
+        expectThat(OptionsForm(withNewType, versions).choices(OptionRow.TYPE).map { it.label })
             .isEqualTo(listOf("Default", "Batch Application"))
     }
 
@@ -105,6 +111,42 @@ class OptionsFormTest {
         form.next(OptionRow.LANGUAGE)
 
         expectThat(form.chosen.test.value).isEqualTo("SPOCK")
+    }
+
+    @Test
+    fun `version row comes first and starts on the first version`() {
+        expectThat(OptionRow.entries.first()).isEqualTo(OptionRow.VERSION)
+        expectThat(form.choices(OptionRow.VERSION))
+            .isEqualTo(listOf(Choice("5.2.2", true), Choice("5.2.3-SNAPSHOT", false)))
+    }
+
+    @Test
+    fun `neighbour version stops at the ends`() {
+        expectThat(form.neighbourVersion(1)).isEqualTo(snapshot)
+        expectThat(form.neighbourVersion(-1)).isNull()
+
+        form.switchTo(snapshot, options)
+
+        expectThat(form.neighbourVersion(1)).isNull()
+        expectThat(form.neighbourVersion(-1)).isEqualTo(release)
+    }
+
+    @Test
+    fun `next on the version row doesn't switch`() {
+        form.next(OptionRow.VERSION)
+
+        expectThat(form.chosen.version).isEqualTo(release)
+    }
+
+    @Test
+    fun `switching keeps the choices and marks the new version`() {
+        repeat(2) { form.next(OptionRow.LANGUAGE) }
+
+        form.switchTo(snapshot, options)
+
+        expectThat(form.chosen.language.value).isEqualTo("KOTLIN")
+        expectThat(form.choices(OptionRow.VERSION))
+            .isEqualTo(listOf(Choice("5.2.2", false), Choice("5.2.3-SNAPSHOT", true)))
     }
 
     private fun type(

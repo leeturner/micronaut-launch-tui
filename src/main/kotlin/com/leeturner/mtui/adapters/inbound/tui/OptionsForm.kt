@@ -1,12 +1,15 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptions
+import com.leeturner.mtui.domain.core.model.onServer
 import com.leeturner.mtui.domain.core.model.withLanguage
 
 enum class OptionRow(
     val label: String,
 ) {
+    VERSION("Version"),
     TYPE("Type"),
     LANGUAGE("Language"),
     BUILD("Build"),
@@ -21,19 +24,32 @@ data class Choice(
 
 // The option rows on the name screen, kept free of TamboUI so it can be unit tested
 class OptionsForm(
-    private val options: SelectOptions,
+    private var options: SelectOptions,
+    private val versions: List<MicronautVersion>,
 ) {
-    var chosen: ProjectOptions = ProjectOptions.defaultsFrom(options)
+    var chosen: ProjectOptions = ProjectOptions.defaultsFrom(options, versions.first())
         private set
 
     fun choices(row: OptionRow): List<Choice> =
         when (row) {
+            OptionRow.VERSION -> versions.map { Choice(it.label, it == chosen.version) }
             OptionRow.TYPE -> options.types.map { Choice(SHORT_TYPE_LABELS[it.value] ?: it.label, it == chosen.type) }
             OptionRow.LANGUAGE -> options.languages.map { Choice(it.label, it == chosen.language) }
             OptionRow.BUILD -> options.buildTypes.map { Choice(it.label, it == chosen.build) }
             OptionRow.TEST -> options.testFrameworks.map { Choice(it.label, it == chosen.test) }
             OptionRow.JDK -> options.jdkVersions.map { Choice(it.label, it == chosen.jdk) }
         }
+
+    // Null past either end; switching needs that server's options, so it's done by switchTo once they've loaded
+    fun neighbourVersion(by: Int): MicronautVersion? = versions.getOrNull(versions.indexOf(chosen.version) + by)
+
+    fun switchTo(
+        version: MicronautVersion,
+        options: SelectOptions,
+    ) {
+        this.options = options
+        chosen = chosen.onServer(version, options)
+    }
 
     fun next(row: OptionRow) = step(row, 1)
 
@@ -45,6 +61,10 @@ class OptionsForm(
     ) {
         chosen =
             when (row) {
+                OptionRow.VERSION -> {
+                    chosen
+                }
+
                 OptionRow.TYPE -> {
                     chosen.copy(type = options.types.stepFrom(chosen.type, by))
                 }

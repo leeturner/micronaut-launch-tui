@@ -16,6 +16,7 @@ import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LanguageDefaults
+import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptionsError
 import com.leeturner.mtui.domain.core.model.TestFramework
@@ -29,10 +30,10 @@ import jakarta.inject.Singleton
 class MicronautLaunchSelectOptionRetriever(
     private val micronautLaunchDefaultApi: MicronautLaunchDefaultApi,
 ) : SelectOptionRetriever {
-    override fun getSelectOptions(): Either<SelectOptionsError, SelectOptions> =
+    override fun getSelectOptions(server: LaunchServer): Either<SelectOptionsError, SelectOptions> =
         either {
             try {
-                val micronautLaunchSelectOptions = micronautLaunchDefaultApi.selectOptions()
+                val micronautLaunchSelectOptions = onServer(server) { micronautLaunchDefaultApi.selectOptions() }
                 micronautLaunchSelectOptions.toSelectOptions().bind()
             } catch (e: HttpClientException) {
                 raise(

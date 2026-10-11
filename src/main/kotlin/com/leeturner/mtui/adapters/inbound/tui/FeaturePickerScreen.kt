@@ -156,6 +156,7 @@ class FeaturePickerScreen(
 
 private fun ProjectOptions.summary(): String =
     listOf(
+        version.label,
         type.label,
         language.label,
         build.label,

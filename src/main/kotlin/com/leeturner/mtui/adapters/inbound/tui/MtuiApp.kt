@@ -3,6 +3,8 @@ package com.leeturner.mtui.adapters.inbound.tui
 import arrow.core.left
 import com.leeturner.mtui.domain.core.model.ApplicationType
 import com.leeturner.mtui.domain.core.model.Language
+import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.services.CatalogLoader
@@ -16,7 +18,16 @@ import dev.tamboui.toolkit.element.Element
 import dev.tamboui.toolkit.event.EventResult
 import dev.tamboui.tui.event.KeyEvent
 import java.nio.file.Path
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
+
+private fun loadFailed(message: String): Element =
+    column(
+        text("Could not load options from Micronaut Launch").bold(),
+        text(message),
+        text(""),
+        text("Press any key to exit").dim(),
+    )
 
 sealed interface MtuiOutcome {
     data class Created(
@@ -47,18 +58,22 @@ class MtuiApp(
     // Replaced whenever features are fetched for a different type and language
     private var pickerScreen = FeaturePickerScreen(emptyList(), ROOT_ID)
 
-    // The type and language the picker's features were fetched for; null until the first fetch
-    private var featuresFor: Pair<ApplicationType, Language>? = null
+    // The server, type and language the picker's features were fetched for; null until the first fetch
+    private var featuresFor: Triple<LaunchServer, ApplicationType, Language>? = null
 
     override fun onStart() {
         background(
-            work = { catalogLoader.loadOptions().mapLeft { it.message } },
+            work = {
+                // Fetched alongside the options and capped at VERSIONS_TIMEOUT, so labels never hold up start-up
+                val versions = CompletableFuture.supplyAsync { catalogLoader.loadVersions(VERSIONS_TIMEOUT) }
+                catalogLoader.loadOptions(LaunchServer.RELEASE).mapLeft { it.message }.map { it to versions.join() }
+            },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
                 { screen = Screen.LoadFailed(it) },
-                { options ->
-                    formScreen = OptionsFormScreen(options)
+                { (options, versions) ->
+                    formScreen = OptionsFormScreen(options, versions)
                     showForm()
                 },
             )
@@ -78,7 +93,7 @@ class MtuiApp(
                 }
 
                 is Screen.Form -> {
-                    formScreen.render(current.error, current.fetching, focus, ::submitName)
+                    formScreen.render(current.error, current.fetching, current.switchingTo, focus, ::submitName)
                 }
 
                 is Screen.Picker -> {
@@ -94,14 +109,6 @@ class MtuiApp(
         // Not a Tab stop on the form, where Tab moves between the name box and the option rows
         return column(content).id(ROOT_ID).focusable(screen !is Screen.Form).onKeyEvent(::handleKey)
     }
-
-    private fun loadFailed(message: String): Element =
-        column(
-            text("Could not load options from Micronaut Launch").bold(),
-            text(message),
-            text(""),
-            text("Press any key to exit").dim(),
-        )
 
     private fun handleKey(event: KeyEvent): EventResult =
         when (val current = screen) {
@@ -134,20 +141,38 @@ class MtuiApp(
             }
         }
 
-    // Keys other than Ctrl+C are ignored while features are fetched, so nothing can start a second fetch
+    // Keys other than Ctrl+C are ignored while features or options load, so nothing can start a second load
     private fun handleFormKey(
         event: KeyEvent,
         form: Screen.Form,
     ): EventResult {
         if (event.isCtrlC) return finish(MtuiOutcome.Cancelled)
-        if (!form.fetching) {
-            when (formScreen.handleKey(event, runner().focusManager())) {
-                FormAction.SUBMIT -> submitName()
-                FormAction.QUIT -> finish(MtuiOutcome.Cancelled)
-                FormAction.NONE -> Unit
+        if (!form.busy) {
+            when (val action = formScreen.handleKey(event, runner().focusManager())) {
+                FormAction.Submit -> submitName()
+                FormAction.Quit -> finish(MtuiOutcome.Cancelled)
+                is FormAction.SwitchVersion -> switchVersion(action.version)
+                FormAction.None -> Unit
             }
         }
         return EventResult.HANDLED
+    }
+
+    // Focus stays on the version row, and a failure leaves the form as it was
+    private fun switchVersion(version: MicronautVersion) {
+        screen = Screen.Form(switchingTo = version)
+        background(
+            work = { catalogLoader.loadOptions(version.server).mapLeft { it.message } },
+            onFailure = { (it.message ?: it.toString()).left() },
+        ) { loaded ->
+            loaded.fold(
+                { message -> screen = Screen.Form(error = message) },
+                { options ->
+                    formScreen.form.switchTo(version, options)
+                    screen = Screen.Form()
+                },
+            )
+        }
     }
 
     // Errors are about the name, so the name box is focused to fix them
@@ -158,7 +183,7 @@ class MtuiApp(
 
     // Enter can arrive both from the name box and as an unconsumed key, so anything but an idle form is ignored
     private fun submitName() {
-        if ((screen as? Screen.Form)?.fetching != false) return
+        if ((screen as? Screen.Form)?.busy != false) return
         ProjectName
             .parse(formScreen.nameInput.text())
             .mapLeft { it.message }
@@ -173,10 +198,10 @@ class MtuiApp(
             )
     }
 
-    // Features depend only on type and language, so the picker is kept as it was left unless one of those changed
+    // Features depend only on server, type and language, so the picker is kept as it was left unless one changed
     private fun openPicker(name: ProjectName) {
         val chosen = formScreen.form.chosen
-        val wanted = chosen.type to chosen.language
+        val wanted = Triple(chosen.version.server, chosen.type, chosen.language)
         if (wanted == featuresFor) {
             screen = Screen.Picker(chosen, name)
             runner().focusManager().setFocus(ROOT_ID)
@@ -186,7 +211,9 @@ class MtuiApp(
         // Moved off the name box so typing is ignored along with every other key while fetching
         runner().focusManager().setFocus(ROOT_ID)
         background(
-            work = { catalogLoader.loadFeatures(chosen.type, chosen.language).mapLeft { it.message } },
+            work = {
+                catalogLoader.loadFeatures(chosen.version.server, chosen.type, chosen.language).mapLeft { it.message }
+            },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
@@ -245,7 +272,10 @@ class MtuiApp(
         data class Form(
             val error: String? = null,
             val fetching: Boolean = false,
-        ) : Screen
+            val switchingTo: MicronautVersion? = null,
+        ) : Screen {
+            val busy get() = fetching || switchingTo != null
+        }
 
         data class Picker(
             val options: ProjectOptions,
@@ -261,5 +291,6 @@ class MtuiApp(
 
     private companion object {
         const val ROOT_ID = "root"
+        val VERSIONS_TIMEOUT: Duration = Duration.ofSeconds(2)
     }
 }

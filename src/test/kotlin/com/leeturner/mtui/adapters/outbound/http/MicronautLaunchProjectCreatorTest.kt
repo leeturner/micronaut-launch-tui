@@ -8,6 +8,8 @@ import com.leeturner.mtui.domain.core.model.ApplicationType
 import com.leeturner.mtui.domain.core.model.BuildType
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
+import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.model.ProjectRejected
@@ -24,6 +26,7 @@ import strikt.arrow.isLeft
 import strikt.arrow.isRight
 import strikt.assertions.contains
 import strikt.assertions.isA
+import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import strikt.assertions.isNull
 
@@ -33,16 +36,21 @@ import strikt.assertions.isNull
         name = "micronaut-launch",
         baseUrlProperties = ["micronaut.http.services.micronaut-launch.url"],
     ),
+    ConfigureWireMock(name = "snapshot", baseUrlProperties = ["mtui.launch.snapshot-url"]),
 )
 class MicronautLaunchProjectCreatorTest {
     @InjectWireMock("micronaut-launch")
     private lateinit var wireMock: WireMockServer
+
+    @InjectWireMock("snapshot")
+    private lateinit var snapshot: WireMockServer
 
     @Inject
     lateinit var creator: MicronautLaunchProjectCreator
 
     private val options =
         ProjectOptions(
+            version = MicronautVersion(LaunchServer.RELEASE, "5.2.2"),
             type = ApplicationType(title = "", name = "", description = "", value = "DEFAULT", label = ""),
             language = Language(extension = "", description = "", name = "", value = "KOTLIN", label = ""),
             build = BuildType(description = "", value = "GRADLE_KOTLIN", label = ""),
@@ -223,12 +231,26 @@ class MicronautLaunchProjectCreatorTest {
             .isEqualTo(message)
     }
 
+    @Test
+    fun `snapshot server is called when it is chosen`() {
+        val zip = byteArrayOf(0x50, 0x4B, 0x03, 0x04)
+        stubCreate("com.example.my-app", WireMock.aResponse().withStatus(201).withBody(zip), on = snapshot)
+        val onSnapshot = options.copy(version = MicronautVersion(LaunchServer.SNAPSHOT, "5.2.3-SNAPSHOT"))
+
+        expectThat(creator.createProject(onSnapshot, name("com.example.my-app"), emptyList()))
+            .isRight()
+            .get { value.toList() }
+            .isEqualTo(zip.toList())
+        expectThat(wireMock.allServeEvents).isEmpty()
+    }
+
     private fun name(raw: String) = ProjectName.parse(raw).getOrNull()!!
 
     private fun stubCreate(
         name: String,
         response: ResponseDefinitionBuilder,
+        on: WireMockServer = wireMock,
     ) {
-        wireMock.stubFor(WireMock.get(WireMock.urlPathEqualTo("/create/DEFAULT/$name")).willReturn(response))
+        on.stubFor(WireMock.get(WireMock.urlPathEqualTo("/create/DEFAULT/$name")).willReturn(response))
     }
 }

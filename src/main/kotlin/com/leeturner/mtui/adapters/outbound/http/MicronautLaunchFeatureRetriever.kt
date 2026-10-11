@@ -10,6 +10,7 @@ import com.leeturner.mtui.domain.core.model.ApplicationType
 import com.leeturner.mtui.domain.core.model.Feature
 import com.leeturner.mtui.domain.core.model.FeaturesError
 import com.leeturner.mtui.domain.core.model.Language
+import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.ports.FeatureRetriever
 import io.micronaut.http.client.exceptions.HttpClientException
 import io.micronaut.http.client.exceptions.HttpClientResponseException
@@ -20,6 +21,7 @@ class MicronautLaunchFeatureRetriever(
     private val micronautLaunchDefaultApi: MicronautLaunchDefaultApi,
 ) : FeatureRetriever {
     override fun getFeatures(
+        server: LaunchServer,
         type: ApplicationType,
         language: Language,
     ): Either<FeaturesError, List<Feature>> =
@@ -31,8 +33,7 @@ class MicronautLaunchFeatureRetriever(
                 MicronautLaunchLanguage.VALUE_MAPPING[language.value]
                     ?: raise(FeaturesError(null, "Unsupported language: ${language.value}"))
             try {
-                micronautLaunchDefaultApi
-                    .featuresByLanguage(launchType, launchLanguage)
+                onServer(server) { micronautLaunchDefaultApi.featuresByLanguage(launchType, launchLanguage) }
                     .features
                     .orEmpty()
                     .mapNotNull { it.toFeature() }

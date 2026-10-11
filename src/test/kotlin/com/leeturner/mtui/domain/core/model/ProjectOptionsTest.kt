@@ -30,11 +30,45 @@ class ProjectOptionsTest {
             buildTypes = nonEmptyListOf(gradle, gradleKotlin, maven),
             defaultBuildType = gradleKotlin,
         )
-    private val defaults = ProjectOptions.defaultsFrom(options)
+    private val release = MicronautVersion(LaunchServer.RELEASE, "5.2.2")
+    private val snapshot = MicronautVersion(LaunchServer.SNAPSHOT, "5.2.3-SNAPSHOT")
+    private val defaults = ProjectOptions.defaultsFrom(options, release)
+
+    // The snapshot server relabels Kotlin, gives it defaults, and has no Maven
+    private val snapshotKotlin =
+        language("KOTLIN", LanguageDefaults(test = "JUNIT", build = "GRADLE_KOTLIN"), label = "Kotlin (snapshot)")
+    private val snapshotOptions =
+        options.copy(
+            languages = nonEmptyListOf(java, groovy, snapshotKotlin),
+            buildTypes = nonEmptyListOf(gradle, gradleKotlin),
+        )
 
     @Test
     fun `defaults come from launch's defaults`() {
-        expectThat(defaults).isEqualTo(ProjectOptions(defaultType, java, gradleKotlin, junit, jdk21))
+        expectThat(defaults).isEqualTo(ProjectOptions(release, defaultType, java, gradleKotlin, junit, jdk21))
+    }
+
+    @Test
+    fun `switching server keeps choices the new server offers, as its own objects`() {
+        val kotlinGradleKotest = defaults.copy(language = kotlin, build = gradle, test = kotest)
+
+        val switched = kotlinGradleKotest.onServer(snapshot, snapshotOptions)
+
+        expectThat(switched).isEqualTo(kotlinGradleKotest.copy(version = snapshot, language = snapshotKotlin))
+    }
+
+    @Test
+    fun `switching server falls back to its default for a choice it doesn't offer`() {
+        val switched = defaults.copy(build = maven).onServer(snapshot, snapshotOptions)
+
+        expectThat(switched.build).isEqualTo(snapshotOptions.defaultBuildType)
+    }
+
+    @Test
+    fun `switching server doesn't apply language defaults`() {
+        val switched = defaults.copy(language = kotlin, test = kotest).onServer(snapshot, snapshotOptions)
+
+        expectThat(switched.test).isEqualTo(kotest)
     }
 
     @Test
@@ -63,5 +97,6 @@ class ProjectOptionsTest {
     private fun language(
         value: String,
         defaults: LanguageDefaults?,
-    ) = Language(extension = "", description = "", name = "", value = value, label = "", defaults = defaults)
+        label: String = "",
+    ) = Language(extension = "", description = "", name = "", value = value, label = label, defaults = defaults)
 }
