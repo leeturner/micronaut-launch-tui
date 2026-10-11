@@ -19,7 +19,6 @@ import strikt.assertions.hasSize
 import strikt.assertions.isA
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
-import strikt.assertions.isNull
 import strikt.assertions.map
 
 @MicronautTest

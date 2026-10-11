@@ -56,7 +56,10 @@ class MicronautLaunchCatalogVersionTest {
     fun `500 is an error`() {
         stubVersions(WireMock.aResponse().withStatus(500))
 
-        expectThat(catalog.getMicronautVersion(LaunchServer.RELEASE)).isLeft()
+        expectThat(catalog.getMicronautVersion(LaunchServer.RELEASE))
+            .isLeft()
+            .get { value.message }
+            .isEqualTo("Client 'micronaut-launch': Server Error")
     }
 
     @Test

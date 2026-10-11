@@ -20,7 +20,6 @@ import strikt.arrow.isLeft
 import strikt.arrow.isRight
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
-import strikt.assertions.isNull
 import strikt.assertions.isTrue
 
 @MicronautTest
@@ -80,6 +79,8 @@ class MicronautLaunchCatalogFeaturesTest {
 
         expectThat(catalog.getFeatures(LaunchServer.RELEASE, type, language))
             .isLeft()
+            .get { value.message }
+            .isEqualTo("Client 'micronaut-launch': Server Error")
     }
 
     @Test
