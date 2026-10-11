@@ -22,3 +22,4 @@ out/
 *.swp
 *.orig
 
+.superpowers/
