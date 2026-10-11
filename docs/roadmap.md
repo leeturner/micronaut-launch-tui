@@ -21,7 +21,7 @@ and `/` starts a search wherever a list can be searched.
 | 2 | Feature picker | Done | Features, grouped by category, can be found by search (substring of name, title or description), toggled, and the selection is always visible | `/application-types/{type}/features/{lang}` |
 | 3 | Options form | Done | Type, language, build, test framework and JDK are editable; changing type or language refreshes the available features | `/select-options` |
 | 4 | Micronaut version | Done | The version is chosen on the name screen from the release and snapshot Launch servers (`launch` and `snapshot.micronaut.io`, each labelled from `/versions`); changing it reloads the options and features from that server | `/versions` |
-| 5 | Preview | | Generated files can be browsed before creating the project, from the name screen or the feature picker; ArchUnit tests guard the ports and adapters boundaries | `/preview/{type}/{name}` |
+| 5 | Preview | Done | Generated files can be browsed before creating the project, from the name screen or the feature picker; ArchUnit tests guard the ports and adapters boundaries | `/preview/{type}/{name}` |
 | 6 | After generating | | Open the project in an IDE or terminal, generate another, or quit | — |
 | 7 | Polish | | Help overlay, themes, remembered preferences, recently used features | — |
 | 8 | Distribution | | Native binaries and a release workflow | — |
