@@ -28,6 +28,7 @@ class PreviewScreen(
 
     // From the last render, which always comes before the keys that use them
     private var height = 1
+    private var width = DIALOG_MIN_WIDTH
     private var linesAtEnd = 1
 
     fun render(options: ProjectOptions): Element {
@@ -91,8 +92,17 @@ class PreviewScreen(
 
     private fun fileList(): Element {
         val matches = browser.matches
+        // Sized to the longest match so file names stay visible, up to the width the file view had last render
+        val dialogWidth =
+            (matches.maxOfOrNull { it.path.length + DIALOG_CHROME } ?: 0).coerceIn(
+                DIALOG_MIN_WIDTH,
+                maxOf(width, DIALOG_MIN_WIDTH),
+            )
         val rows: List<StyledElement<*>> =
-            matches.map { if (it == browser.highlighted) text(it.path).reversed() else text(it.path) }
+            matches.map {
+                val label = text(shortenPath(it.path, dialogWidth - DIALOG_CHROME))
+                if (it == browser.highlighted) label.reversed() else label
+            }
         return dialog(
             "Files",
             textInput(filterInput).focusable(false).cursorRequiresFocus(false).length(1),
@@ -101,7 +111,7 @@ class PreviewScreen(
                 .autoScroll()
                 .selected(matches.indexOf(browser.highlighted).coerceAtLeast(0))
                 .fill(),
-        ).rounded().width(DIALOG_WIDTH)
+        ).rounded().width(dialogWidth)
     }
 
     // Drawn straight into its area, which is the only place the height left for the file is known
@@ -111,6 +121,7 @@ class PreviewScreen(
             buffer: Buffer,
         ) {
             height = area.height().coerceAtLeast(1)
+            width = area.width()
             linesAtEnd = browser.linesAtEnd(area.width(), height)
             // Re-clamps the scroll position if the terminal changed size
             browser.scrollBy(0, linesAtEnd)
@@ -121,8 +132,17 @@ class PreviewScreen(
     }
 
     private companion object {
-        const val DIALOG_WIDTH = 60
+        const val DIALOG_MIN_WIDTH = 40
+
+        // Borders plus a column of slack either side of the longest path
+        const val DIALOG_CHROME = 4
         const val PREVIEW_HINTS = "j/k scroll · f files · [ ] prev/next · Esc back"
         const val FILE_LIST_HINTS = "type to filter · ↑/↓ move · Enter open · Esc close"
     }
 }
+
+// Cut from the left, because the end of a path is the part that says which file it is
+internal fun shortenPath(
+    path: String,
+    max: Int,
+): String = if (path.length <= max) path else "…" + path.takeLast((max - 1).coerceAtLeast(0))
