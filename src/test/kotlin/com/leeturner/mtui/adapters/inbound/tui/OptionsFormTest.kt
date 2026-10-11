@@ -13,6 +13,7 @@ import com.leeturner.mtui.domain.core.model.TestFramework
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import strikt.assertions.isNull
 
 class OptionsFormTest {
     private val types =
@@ -110,6 +111,42 @@ class OptionsFormTest {
         form.next(OptionRow.LANGUAGE)
 
         expectThat(form.chosen.test.value).isEqualTo("SPOCK")
+    }
+
+    @Test
+    fun `version row comes first and starts on the first version`() {
+        expectThat(OptionRow.entries.first()).isEqualTo(OptionRow.VERSION)
+        expectThat(form.choices(OptionRow.VERSION))
+            .isEqualTo(listOf(Choice("5.2.2", true), Choice("5.2.3-SNAPSHOT", false)))
+    }
+
+    @Test
+    fun `neighbour version stops at the ends`() {
+        expectThat(form.neighbourVersion(1)).isEqualTo(snapshot)
+        expectThat(form.neighbourVersion(-1)).isNull()
+
+        form.switchTo(snapshot, options)
+
+        expectThat(form.neighbourVersion(1)).isNull()
+        expectThat(form.neighbourVersion(-1)).isEqualTo(release)
+    }
+
+    @Test
+    fun `next on the version row doesn't switch`() {
+        form.next(OptionRow.VERSION)
+
+        expectThat(form.chosen.version).isEqualTo(release)
+    }
+
+    @Test
+    fun `switching keeps the choices and marks the new version`() {
+        repeat(2) { form.next(OptionRow.LANGUAGE) }
+
+        form.switchTo(snapshot, options)
+
+        expectThat(form.chosen.language.value).isEqualTo("KOTLIN")
+        expectThat(form.choices(OptionRow.VERSION))
+            .isEqualTo(listOf(Choice("5.2.2", false), Choice("5.2.3-SNAPSHOT", true)))
     }
 
     private fun type(
