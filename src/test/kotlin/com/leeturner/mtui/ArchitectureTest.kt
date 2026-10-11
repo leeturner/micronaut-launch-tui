@@ -5,6 +5,7 @@ import com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAPackage
 import com.tngtech.archunit.core.importer.ClassFileImporter
 import com.tngtech.archunit.core.importer.ImportOption
 import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes
+import com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses
 import com.tngtech.archunit.library.Architectures.onionArchitecture
 import org.junit.jupiter.api.Test
 
@@ -43,5 +44,16 @@ class ArchitectureTest {
                 "arrow..",
                 "org.jetbrains.annotations..",
             ).check(classes)
+    }
+
+    @Test
+    fun `nothing depends on the composition root`() {
+        noClasses()
+            .that()
+            .resideOutsideOfPackage("com.leeturner.mtui")
+            .should()
+            .dependOnClassesThat()
+            .resideInAPackage("com.leeturner.mtui")
+            .check(classes)
     }
 }
