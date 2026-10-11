@@ -67,7 +67,7 @@ class OptionsFormScreen(
                 .map { optionRow(it, focus.isFocused(it.focusId), dimmed = switchingTo != null) }
                 .toTypedArray(),
             text(""),
-            text("Tab/j/k move · ←/→ h/l change · p preview · Enter choose features · Esc quit · ? help").dim(),
+            text(HINTS).dim(),
         )
 
     fun focusName(focus: FocusManager) = focus.setFocus(NAME_INPUT_ID)
@@ -153,6 +153,7 @@ class OptionsFormScreen(
     companion object {
         private const val NAME_INPUT_ID = "name"
         private const val LABEL_WIDTH = 10
+        internal const val HINTS = "Tab/j/k move · ←/→ h/l change · p preview · Enter features · Esc quit · ? help"
 
         val HELP =
             Help(
@@ -172,8 +173,8 @@ class OptionsFormScreen(
 }
 
 // The name box takes every printable key before the app sees it, so a ? typed there is taken back out afterwards.
-// A name can't contain ?, so nothing is lost. Only the character before the cursor is checked,
-// so a pasted name keeps its ? for the name check to reject
+// A name can't contain ?, so nothing is lost. A paste arrives whole (see MTUI_CONFIG) and only the character
+// before the cursor is checked, so a pasted name with a ? inside keeps it for the name check to reject
 internal fun TextInputState.takeTypedQuestionMark(): Boolean {
     if (text().getOrNull(cursorPosition() - 1) != '?') return false
     deleteBackward()

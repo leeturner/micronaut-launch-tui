@@ -168,8 +168,8 @@ class FeaturePickerScreen(
             )
 
         private const val SEARCH_INPUT_ID = "search"
-        private const val HINTS =
-            "j/k move · Space toggle · / search · x clear · p preview · Enter generate · Esc back · ? help"
+        internal const val HINTS =
+            "Space toggle · / search · x clear · p preview · Enter create · Esc back · ? help"
         private const val NAME_COLUMN_WIDTH = 30
         private const val SELECTED_PANE_WIDTH = 32
     }

@@ -133,15 +133,15 @@ class PreviewScreen(
         }
     }
 
-    private companion object {
-        const val DIALOG_MIN_WIDTH = 40
+    companion object {
+        private const val DIALOG_MIN_WIDTH = 40
 
         // Borders plus a column of slack either side of the longest path
-        const val DIALOG_CHROME = 4
-        const val PREVIEW_HINTS = "j/k scroll · f files · [ ] prev/next · Esc back · ? help"
-        const val FILE_LIST_HINTS = "type to filter · ↑/↓ move · Enter open · Esc close · ? help"
+        private const val DIALOG_CHROME = 4
+        internal const val PREVIEW_HINTS = "j/k scroll · f files · [ ] prev/next · Esc back · ? help"
+        internal const val FILE_LIST_HINTS = "type to filter · ↑/↓ move · Enter open · Esc close · ? help"
 
-        val PREVIEW_HELP =
+        private val PREVIEW_HELP =
             Help(
                 "Preview keys",
                 listOf(
@@ -155,7 +155,7 @@ class PreviewScreen(
                 ),
             )
 
-        val FILE_LIST_HELP =
+        private val FILE_LIST_HELP =
             Help(
                 "File list keys",
                 listOf(

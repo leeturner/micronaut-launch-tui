@@ -15,6 +15,7 @@ import dev.tamboui.toolkit.app.ToolkitApp
 import dev.tamboui.toolkit.element.Element
 import dev.tamboui.toolkit.event.EventResult
 import dev.tamboui.toolkit.focus.FocusManager
+import dev.tamboui.tui.TuiConfig
 import dev.tamboui.tui.event.KeyEvent
 import java.nio.file.Path
 import java.time.Duration
@@ -27,6 +28,14 @@ private fun loadFailed(message: String): Element =
         text(""),
         text("Press any key to exit").dim(),
     )
+
+// Bracketed paste delivers a paste whole, so a ? in a pasted name lands in the name box instead of opening help
+internal val MTUI_CONFIG: TuiConfig =
+    TuiConfig
+        .defaults()
+        .toBuilder()
+        .bracketedPaste(true)
+        .build()
 
 sealed interface MtuiOutcome {
     data class Created(
@@ -66,6 +75,8 @@ class MtuiApp(
 
     // Where the focus was when help opened, given back when it closes
     private var focusBeforeHelp: String? = null
+
+    override fun configure(): TuiConfig = MTUI_CONFIG
 
     override fun onStart() {
         background(
