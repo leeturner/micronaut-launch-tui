@@ -3,6 +3,8 @@ package com.leeturner.mtui.adapters.inbound.tui
 import arrow.core.left
 import com.leeturner.mtui.domain.core.model.ApplicationType
 import com.leeturner.mtui.domain.core.model.Language
+import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.services.CatalogLoader
@@ -58,7 +60,7 @@ class MtuiApp(
             loaded.fold(
                 { screen = Screen.LoadFailed(it) },
                 { options ->
-                    formScreen = OptionsFormScreen(options)
+                    formScreen = OptionsFormScreen(options, LaunchServer.entries.map(MicronautVersion::fallback))
                     showForm()
                 },
             )

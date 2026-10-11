@@ -6,6 +6,8 @@ import com.leeturner.mtui.domain.core.model.BuildType
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LanguageDefaults
+import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.model.TestFramework
 import org.junit.jupiter.api.Test
@@ -55,7 +57,10 @@ class OptionsFormTest {
             buildTypes = builds,
             defaultBuildType = builds[1],
         )
-    private val form = OptionsForm(options)
+    private val release = MicronautVersion(LaunchServer.RELEASE, "5.2.2")
+    private val snapshot = MicronautVersion(LaunchServer.SNAPSHOT, "5.2.3-SNAPSHOT")
+    private val versions = listOf(release, snapshot)
+    private val form = OptionsForm(options, versions)
 
     @Test
     fun `starts on launch's defaults`() {
@@ -73,7 +78,7 @@ class OptionsFormTest {
     fun `unknown type falls back to launch's label`() {
         val withNewType = options.copy(types = nonEmptyListOf(types.first(), type("BATCH", "Batch Application")))
 
-        expectThat(OptionsForm(withNewType).choices(OptionRow.TYPE).map { it.label })
+        expectThat(OptionsForm(withNewType, versions).choices(OptionRow.TYPE).map { it.label })
             .isEqualTo(listOf("Default", "Batch Application"))
     }
 

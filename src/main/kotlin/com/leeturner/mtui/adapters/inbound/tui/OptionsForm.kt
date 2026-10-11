@@ -1,5 +1,6 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.model.withLanguage
@@ -22,8 +23,9 @@ data class Choice(
 // The option rows on the name screen, kept free of TamboUI so it can be unit tested
 class OptionsForm(
     private val options: SelectOptions,
+    versions: List<MicronautVersion>,
 ) {
-    var chosen: ProjectOptions = ProjectOptions.defaultsFrom(options)
+    var chosen: ProjectOptions = ProjectOptions.defaultsFrom(options, versions.first())
         private set
 
     fun choices(row: OptionRow): List<Choice> =

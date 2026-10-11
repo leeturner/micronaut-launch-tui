@@ -1,5 +1,6 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.SelectOptions
 import dev.tamboui.toolkit.Toolkit.column
 import dev.tamboui.toolkit.Toolkit.row
@@ -17,8 +18,9 @@ enum class FormAction { NONE, SUBMIT, QUIT }
 // The name screen: the name box and the option rows; kept for the whole run so going back keeps what was entered
 class OptionsFormScreen(
     options: SelectOptions,
+    versions: List<MicronautVersion>,
 ) {
-    val form = OptionsForm(options)
+    val form = OptionsForm(options, versions)
     val nameInput = TextInputState()
 
     fun render(

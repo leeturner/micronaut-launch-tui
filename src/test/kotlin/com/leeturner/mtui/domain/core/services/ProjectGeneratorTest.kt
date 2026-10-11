@@ -8,6 +8,8 @@ import com.leeturner.mtui.domain.core.model.BuildType
 import com.leeturner.mtui.domain.core.model.GenerateProjectError
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
+import com.leeturner.mtui.domain.core.model.LaunchServer
+import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectAlreadyExists
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
@@ -26,6 +28,7 @@ import java.nio.file.Path
 class ProjectGeneratorTest {
     private val options =
         ProjectOptions(
+            version = MicronautVersion(LaunchServer.RELEASE, "5.2.2"),
             type = ApplicationType(title = "", name = "", description = "", value = "DEFAULT", label = ""),
             language = Language(extension = "", description = "", name = "", value = "KOTLIN", label = ""),
             build = BuildType(description = "", value = "GRADLE_KOTLIN", label = ""),
