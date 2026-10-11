@@ -7,6 +7,7 @@ import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
+import com.leeturner.mtui.domain.core.model.hasSameFeaturesAs
 import com.leeturner.mtui.domain.core.services.CatalogLoader
 import com.leeturner.mtui.domain.core.services.ProjectGenerator
 import dev.tamboui.toolkit.Toolkit.column
@@ -58,8 +59,8 @@ class MtuiApp(
     // Replaced whenever features are fetched for a different type and language
     private var pickerScreen = FeaturePickerScreen(emptyList(), ROOT_ID)
 
-    // The server, type and language the picker's features were fetched for; null until the first fetch
-    private var featuresFor: Triple<LaunchServer, ApplicationType, Language>? = null
+    // The options the picker's features were fetched for; null until the first fetch
+    private var featuresFor: ProjectOptions? = null
 
     override fun onStart() {
         background(
@@ -201,8 +202,7 @@ class MtuiApp(
     // Features depend only on server, type and language, so the picker is kept as it was left unless one changed
     private fun openPicker(name: ProjectName) {
         val chosen = formScreen.form.chosen
-        val wanted = Triple(chosen.version.server, chosen.type, chosen.language)
-        if (wanted == featuresFor) {
+        if (chosen.hasSameFeaturesAs(featuresFor)) {
             screen = Screen.Picker(chosen, name)
             runner().focusManager().setFocus(ROOT_ID)
             return
@@ -220,7 +220,7 @@ class MtuiApp(
                 { message -> showForm(message) },
                 { features ->
                     pickerScreen = FeaturePickerScreen(features, ROOT_ID, pickerScreen.picker.selected)
-                    featuresFor = wanted
+                    featuresFor = chosen
                     openPicker(name)
                 },
             )

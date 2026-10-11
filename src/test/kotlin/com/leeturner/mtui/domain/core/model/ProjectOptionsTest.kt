@@ -4,6 +4,8 @@ import arrow.core.nonEmptyListOf
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import strikt.assertions.isFalse
+import strikt.assertions.isTrue
 
 class ProjectOptionsTest {
     private val defaultType = ApplicationType(title = "", name = "", description = "", value = "DEFAULT", label = "")
@@ -92,6 +94,25 @@ class ProjectOptionsTest {
         val changed = defaults.copy(test = kotest, build = maven).withLanguage(python, options)
 
         expectThat(changed).isEqualTo(defaults.copy(language = python, test = kotest, build = maven))
+    }
+
+    @Test
+    fun `changing build, test or JDK keeps the same features`() {
+        val changed = defaults.copy(build = maven, test = kotest, jdk = JdkVersion("", "", "JDK_17", ""))
+
+        expectThat(changed.hasSameFeaturesAs(defaults)).isTrue()
+    }
+
+    @Test
+    fun `changing server, type or language needs new features`() {
+        expectThat(defaults.copy(version = snapshot).hasSameFeaturesAs(defaults)).isFalse()
+        expectThat(defaults.copy(type = defaultType.copy(value = "CLI")).hasSameFeaturesAs(defaults)).isFalse()
+        expectThat(defaults.copy(language = groovy).hasSameFeaturesAs(defaults)).isFalse()
+    }
+
+    @Test
+    fun `nothing fetched yet needs features`() {
+        expectThat(defaults.hasSameFeaturesAs(null)).isFalse()
     }
 
     private fun language(

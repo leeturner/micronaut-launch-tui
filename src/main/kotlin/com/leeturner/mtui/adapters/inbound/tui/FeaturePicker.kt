@@ -1,6 +1,7 @@
 package com.leeturner.mtui.adapters.inbound.tui
 
 import com.leeturner.mtui.domain.core.model.Feature
+import com.leeturner.mtui.domain.core.model.matches
 
 data class FeatureGroup(
     val category: String,
@@ -24,8 +25,7 @@ class FeaturePicker(
     var query: String = ""
         set(value) {
             field = value
-            val term = value.trim()
-            groups = group(all.filter { it.matches(term) })
+            groups = group(all.filter { it.matches(value) })
             if (visible().none { it.name == highlightedName }) highlightedName = visible().firstOrNull()?.name
         }
 
@@ -64,9 +64,4 @@ class FeaturePicker(
 
     private fun group(features: List<Feature>): List<FeatureGroup> =
         features.groupBy { it.category }.map { (category, inCategory) -> FeatureGroup(category, inCategory) }
-
-    private fun Feature.matches(term: String): Boolean =
-        name.contains(term, ignoreCase = true) ||
-            title.contains(term, ignoreCase = true) ||
-            description.contains(term, ignoreCase = true)
 }
