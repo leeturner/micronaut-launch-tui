@@ -150,8 +150,26 @@ class FeaturePickerScreen(
             loading: String?,
         ): StyledElement<*> = if (loading != null) row(spinner(), text(" $loading")) else text(error ?: "").bold()
 
+        val HELP =
+            Help(
+                "Feature picker keys",
+                listOf(
+                    KeyHelp("j / ↓", "move down"),
+                    KeyHelp("k / ↑", "move up"),
+                    KeyHelp("Space", "select or unselect the feature"),
+                    KeyHelp("/", "search names, titles and descriptions"),
+                    KeyHelp("Enter / Esc", "leave the search"),
+                    KeyHelp("Esc", "clear the search, then go back"),
+                    KeyHelp("x", "unselect every feature"),
+                    KeyHelp("p", "preview the generated files"),
+                    KeyHelp("Enter", "generate the project"),
+                    KeyHelp("Ctrl+C", "quit"),
+                ),
+            )
+
         private const val SEARCH_INPUT_ID = "search"
-        private const val HINTS = "j/k move · Space toggle · / search · x clear · p preview · Enter generate · Esc back"
+        private const val HINTS =
+            "j/k move · Space toggle · / search · x clear · p preview · Enter generate · Esc back · ? help"
         private const val NAME_COLUMN_WIDTH = 30
         private const val SELECTED_PANE_WIDTH = 32
     }
