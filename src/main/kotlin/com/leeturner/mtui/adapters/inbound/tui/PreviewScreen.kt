@@ -41,6 +41,8 @@ class PreviewScreen(
         }
     }
 
+    val help: Help get() = if (browser.listOpen) FILE_LIST_HELP else PREVIEW_HELP
+
     fun handleKey(event: KeyEvent): PreviewAction =
         when {
             event.isCtrlC -> {
@@ -131,13 +133,39 @@ class PreviewScreen(
         }
     }
 
-    private companion object {
-        const val DIALOG_MIN_WIDTH = 40
+    companion object {
+        private const val DIALOG_MIN_WIDTH = 40
 
         // Borders plus a column of slack either side of the longest path
-        const val DIALOG_CHROME = 4
-        const val PREVIEW_HINTS = "j/k scroll · f files · [ ] prev/next · Esc back"
-        const val FILE_LIST_HINTS = "type to filter · ↑/↓ move · Enter open · Esc close"
+        private const val DIALOG_CHROME = 4
+        internal const val PREVIEW_HINTS = "j/k scroll · f files · [ ] prev/next · Esc back · ? help"
+        internal const val FILE_LIST_HINTS = "type to filter · ↑/↓ move · Enter open · Esc close · ? help"
+
+        private val PREVIEW_HELP =
+            Help(
+                "Preview keys",
+                listOf(
+                    KeyHelp("j / ↓", "scroll down"),
+                    KeyHelp("k / ↑", "scroll up"),
+                    KeyHelp("PgDn / PgUp", "scroll a page"),
+                    KeyHelp("[ / ]", "previous or next file"),
+                    KeyHelp("f / /", "open the file list"),
+                    KeyHelp("Esc", "go back"),
+                    KeyHelp("Ctrl+C", "quit"),
+                ),
+            )
+
+        private val FILE_LIST_HELP =
+            Help(
+                "File list keys",
+                listOf(
+                    KeyHelp("type", "filter the files"),
+                    KeyHelp("↑ / ↓", "move"),
+                    KeyHelp("Enter", "open the file"),
+                    KeyHelp("Esc", "close the list"),
+                    KeyHelp("Ctrl+C", "quit"),
+                ),
+            )
     }
 }
 

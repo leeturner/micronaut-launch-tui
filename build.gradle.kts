@@ -102,6 +102,13 @@ micronaut {
   }
 }
 
+// JLine loads its native library, which Java 25 warns about on every run unless the jar allows it
+tasks.shadowJar {
+  manifest {
+    attributes("Enable-Native-Access" to "ALL-UNNAMED")
+  }
+}
+
 tasks.named<io.micronaut.gradle.docker.MicronautDockerfile>("dockerfile") {
   baseImage = "eclipse-temurin:25-jre"
 }

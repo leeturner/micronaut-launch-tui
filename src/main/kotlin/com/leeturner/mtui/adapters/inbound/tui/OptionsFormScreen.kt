@@ -67,7 +67,7 @@ class OptionsFormScreen(
                 .map { optionRow(it, focus.isFocused(it.focusId), dimmed = switchingTo != null) }
                 .toTypedArray(),
             text(""),
-            text("Tab/j/k move · ←/→ h/l change · p preview · Enter choose features · Esc quit").dim(),
+            text(HINTS).dim(),
         )
 
     fun focusName(focus: FocusManager) = focus.setFocus(NAME_INPUT_ID)
@@ -150,10 +150,35 @@ class OptionsFormScreen(
         return row(labelText, *choices.toTypedArray()).id(row.focusId).focusable().length(1)
     }
 
-    private companion object {
-        const val NAME_INPUT_ID = "name"
-        const val LABEL_WIDTH = 10
+    companion object {
+        private const val NAME_INPUT_ID = "name"
+        private const val LABEL_WIDTH = 10
+        internal const val HINTS = "Tab/j/k move · ←/→ h/l change · p preview · Enter features · Esc quit · ? help"
+
+        val HELP =
+            Help(
+                "Name and options keys",
+                listOf(
+                    KeyHelp("Tab / Shift+Tab", "move between the name and the options"),
+                    KeyHelp("j / ↓", "move down the options"),
+                    KeyHelp("k / ↑", "move up the options"),
+                    KeyHelp("h l / ← →", "change the option"),
+                    KeyHelp("p", "preview the generated files"),
+                    KeyHelp("Enter", "choose features"),
+                    KeyHelp("Esc", "quit"),
+                    KeyHelp("Ctrl+C", "quit"),
+                ),
+            )
     }
+}
+
+// The name box takes every printable key before the app sees it, so a ? typed there is taken back out afterwards.
+// A name can't contain ?, so nothing is lost. A paste arrives whole (see MTUI_CONFIG) and only the character
+// before the cursor is checked, so a pasted name with a ? inside keeps it for the name check to reject
+internal fun TextInputState.takeTypedQuestionMark(): Boolean {
+    if (text().getOrNull(cursorPosition() - 1) != '?') return false
+    deleteBackward()
+    return true
 }
 
 private val OptionRow.focusId: String get() = "option-${name.lowercase()}"

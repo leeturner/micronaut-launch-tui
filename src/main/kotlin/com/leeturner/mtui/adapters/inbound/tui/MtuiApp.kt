@@ -14,6 +14,8 @@ import dev.tamboui.toolkit.Toolkit.text
 import dev.tamboui.toolkit.app.ToolkitApp
 import dev.tamboui.toolkit.element.Element
 import dev.tamboui.toolkit.event.EventResult
+import dev.tamboui.toolkit.focus.FocusManager
+import dev.tamboui.tui.TuiConfig
 import dev.tamboui.tui.event.KeyEvent
 import java.nio.file.Path
 import java.time.Duration
@@ -26,6 +28,14 @@ private fun loadFailed(message: String): Element =
         text(""),
         text("Press any key to exit").dim(),
     )
+
+// Bracketed paste delivers a paste whole, so a ? in a pasted name lands in the name box instead of opening help
+internal val MTUI_CONFIG: TuiConfig =
+    TuiConfig
+        .defaults()
+        .toBuilder()
+        .bracketedPaste(true)
+        .build()
 
 sealed interface MtuiOutcome {
     data class Created(
@@ -61,6 +71,13 @@ class MtuiApp(
     // The options the picker's features were fetched for; null until the first fetch
     private var featuresFor: ProjectOptions? = null
 
+    private val help = HelpOverlay()
+
+    // Where the focus was when help opened, given back when it closes
+    private var focusBeforeHelp: String? = null
+
+    override fun configure(): TuiConfig = MTUI_CONFIG
+
     override fun onStart() {
         background(
             work = { catalogLoader.loadStart(VERSIONS_TIMEOUT).mapLeft { it.message } },
@@ -78,6 +95,11 @@ class MtuiApp(
 
     override fun render(): Element {
         val focus = runner().focusManager()
+        val shown = screen
+        if (shown is Screen.Form && !shown.busy && formScreen.nameInput.takeTypedQuestionMark()) {
+            help.open(OptionsFormScreen.HELP)
+        }
+        holdFocusForHelp(focus)
         val content =
             when (val current = screen) {
                 Screen.Loading -> {
@@ -115,10 +137,44 @@ class MtuiApp(
                 }
             }
         // Not a Tab stop on the form, where Tab moves between the name box and the option rows
-        return column(content).id(ROOT_ID).focusable(screen !is Screen.Form).onKeyEvent(::handleKey)
+        val focusable = screen !is Screen.Form || help.showing != null
+        return column(help.render(content)).id(ROOT_ID).focusable(focusable).onKeyEvent(::handleKey)
     }
 
+    // The name box takes keys before the root does, so help holds the focus on the root until it closes, even after Tab
+    private fun holdFocusForHelp(focus: FocusManager) {
+        val before = focusBeforeHelp
+        when {
+            help.showing != null -> {
+                if (before == null) focusBeforeHelp = focus.focusedId() ?: ROOT_ID
+                focus.setFocus(ROOT_ID)
+            }
+
+            before != null -> {
+                focus.setFocus(before)
+                focusBeforeHelp = null
+            }
+        }
+    }
+
+    // Help answers first, so while it is open no key reaches the screen behind it
     private fun handleKey(event: KeyEvent): EventResult =
+        when (help.handleKey(event, availableHelp())) {
+            HelpResult.QUIT -> finish(MtuiOutcome.Cancelled)
+            HelpResult.HANDLED -> EventResult.HANDLED
+            HelpResult.PASS -> handleScreenKey(event)
+        }
+
+    // None while loading, generating or busy, where every key but Ctrl+C is ignored
+    private fun availableHelp(): Help? =
+        when (val current = screen) {
+            is Screen.Form -> OptionsFormScreen.HELP.takeUnless { current.busy }
+            is Screen.Picker -> FeaturePickerScreen.HELP.takeUnless { current.previewing }
+            is Screen.Preview -> current.screen.help
+            else -> null
+        }
+
+    private fun handleScreenKey(event: KeyEvent): EventResult =
         when (val current = screen) {
             is Screen.LoadFailed -> {
                 finish(MtuiOutcome.Failed(current.message))

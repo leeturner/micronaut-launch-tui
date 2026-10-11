@@ -1,62 +1,126 @@
-# Micronaut CLI Template
+# mtui
 
-A Kotlin-based Micronaut CLI application template with enhanced tooling and testing libraries.
+[![Compile and Build](https://github.com/leeturner/micronaut-launch-tui/actions/workflows/build.yml/badge.svg)](https://github.com/leeturner/micronaut-launch-tui/actions/workflows/build.yml)
+
+A terminal UI for creating Micronaut projects through
+[Micronaut Launch](https://launch.micronaut.io), built with
+[TamboUI](https://tamboui.dev).
+
+![Creating a project with mtui](docs/images/demo.gif)
+
+## Why
+
+The hardest part of creating a Micronaut project is finding the right features:
+there are hundreds of them. `mtui` puts them in one searchable list, so you
+type a few letters, press Space and move on, without leaving the terminal or
+unzipping a download.
+
+It was inspired by Dan Vega's
+[spring-initializr-tui](https://github.com/danvega/spring-initializr-tui), which
+does the same for Spring Boot.
 
 ## Features
 
-This template extends the base Micronaut CLI application with the following enhancements:
+- Search every feature by name, title or description, and see what you have
+  selected at all times
+- Choose the application type, language, build tool, test framework and JDK
+- Switch between the latest Micronaut release and the current snapshot
+- Preview the generated files before creating anything
+- Unzip the project straight into the current directory
+- Open the project with your editor or IDE once it is created
+- Press `?` on any screen to see its keys
 
-### Build & Dependency Management
-- **Gradle Version Catalogue**: Centralized dependency management using `libs.versions.toml`
-- **Java 25**: Modern Java runtime with toolchain support
+## Screenshots
 
-### Code Quality & Linting
-- **Kotlinter**: Kotlin code formatter and linter following ktlint rules
-- **Detekt**: Static code analysis for Kotlin with custom configuration
+### Name and options
 
-### Libraries
-- **Arrow Core**: Functional programming library for Kotlin, providing functional data types and utilities
-- **Strikt**: Modern assertion library for Kotlin tests with fluent API
-  - Includes Arrow integration for functional type assertions
+Type the project name, then pick the Micronaut version, application type,
+language, build tool, test framework and JDK.
 
-### CI/CD & Automation
-- **GitHub Actions**: Automated build workflow running on push and PR to main branch
-- **Dependabot**: Daily automated dependency updates for Gradle dependencies
-- **Dependency Submission**: Automated dependency graph generation for security alerts
+![The name and options screen](docs/images/form.png)
 
-### CLI Framework
-- **Picocli**: Command-line interface framework integrated with Micronaut
-- Configured to return proper exit codes for command execution
+### Features
 
-## How to use this template
+Press `/` to search, Space to select. The features you have chosen stay
+listed on the right.
 
-Click on the "Use this template" button on the GitHub page to create a new project based on this template.
+![The feature picker](docs/images/picker.png)
 
-Once you have created your project, you can update the following parts of the project
-to start developing your application:
+### Preview
 
-* The project name in `settings.gradle.kts`
-* The project name in `application.properties`
-* Rename the package in the `src/main` and `src/test` directories
-* Update to the same package name in `build.gradle.kts` (`group`, `mainClass`, `micronaut/annotations`)
-* Delete or rename the source code as required
+Press `p` to browse the files Launch would generate, with `f` to jump to a
+file by name.
 
-## Micronaut Documentation
+![The file preview](docs/images/preview.png)
 
-- [User Guide](https://docs.micronaut.io/4.10.2/guide/index.html)
-- [API Reference](https://docs.micronaut.io/4.10.2/api/index.html)
-- [Configuration Reference](https://docs.micronaut.io/4.10.2/guide/configurationreference.html)
-- [Micronaut Guides](https://guides.micronaut.io/index.html)
----
+### Help
 
-- [Micronaut Gradle Plugin documentation](https://micronaut-projects.github.io/micronaut-gradle-plugin/latest/)
-- [GraalVM Gradle Plugin documentation](https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html)
-- [Shadow Gradle Plugin](https://gradleup.com/shadow/)
+Press `?` on any screen for every key it understands.
 
-## Feature kapt documentation
+![The help popup](docs/images/help.png)
 
-- [Micronaut Kotlin Annotation Processing (KAPT) documentation](https://docs.micronaut.io/snapshot/guide/#kapt)
+## Build and run
 
-- [https://kotlinlang.org/docs/kapt.html](https://kotlinlang.org/docs/kapt.html)
+You need Java 25. There are no prebuilt downloads yet.
 
+```bash
+./gradlew shadowJar
+java -jar build/libs/micronaut-launch-tui-0.1-all.jar
+```
 
+### Run it from anywhere
+
+Add an alias to `~/.zshrc` or `~/.bashrc`:
+
+```bash
+alias mtui='java -jar /path/to/micronaut-launch-tui/build/libs/micronaut-launch-tui-0.1-all.jar'
+```
+
+Then create projects from wherever you keep them. The project is unzipped into
+the current directory:
+
+```bash
+cd ~/dev
+mtui
+```
+
+### Open the project when it's created
+
+Give `mtui` the command that opens a project, and it runs it with the new
+project's path once it's created:
+
+```bash
+mtui --open idea
+```
+
+Or set it once in your shell profile. `--open` wins if both are set:
+
+```bash
+export MTUI_OPEN=idea
+```
+
+## Keys
+
+Every list moves with the arrow keys or `j`/`k`, `/` starts a search, and `?`
+shows all of the current screen's keys.
+
+## Development
+
+```bash
+./gradlew build         # tests, Kotlinter and Detekt
+./gradlew formatKotlin  # fix formatting
+```
+
+The work is planned in slices on the [roadmap](docs/roadmap.md), each with its
+own design in [`docs/superpowers/specs`](docs/superpowers/specs).
+
+### Screenshots
+
+The images in `docs/images` are made with [vhs](https://github.com/charmbracelet/vhs)
+from the tapes in `docs/tapes`. They use the live Launch server, so they show
+whatever it offers on the day. To regenerate them, from the repo root:
+
+```bash
+./gradlew shadowJar
+for tape in docs/tapes/{demo,form,picker,preview,help}.tape; do vhs "$tape"; done
+```
