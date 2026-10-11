@@ -8,8 +8,3 @@ data class Feature(
     val preview: Boolean,
     val community: Boolean,
 )
-
-data class FeaturesError(
-    val status: Int?,
-    val message: String,
-)

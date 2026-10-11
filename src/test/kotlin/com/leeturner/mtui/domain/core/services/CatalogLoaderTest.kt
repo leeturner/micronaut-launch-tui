@@ -7,20 +7,14 @@ import arrow.core.right
 import com.leeturner.mtui.domain.core.model.ApplicationType
 import com.leeturner.mtui.domain.core.model.BuildType
 import com.leeturner.mtui.domain.core.model.CatalogError
-import com.leeturner.mtui.domain.core.model.EmptySelectOptionsError
 import com.leeturner.mtui.domain.core.model.Feature
-import com.leeturner.mtui.domain.core.model.FeaturesError
 import com.leeturner.mtui.domain.core.model.JdkVersion
 import com.leeturner.mtui.domain.core.model.Language
 import com.leeturner.mtui.domain.core.model.LaunchServer
 import com.leeturner.mtui.domain.core.model.MicronautVersion
 import com.leeturner.mtui.domain.core.model.SelectOptions
-import com.leeturner.mtui.domain.core.model.SelectOptionsError
 import com.leeturner.mtui.domain.core.model.TestFramework
-import com.leeturner.mtui.domain.core.model.VersionError
-import com.leeturner.mtui.domain.core.ports.FeatureRetriever
-import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
-import com.leeturner.mtui.domain.core.ports.VersionRetriever
+import com.leeturner.mtui.domain.core.ports.LaunchCatalog
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.arrow.isLeft
@@ -46,22 +40,20 @@ class CatalogLoaderTest {
             defaultBuildType = BuildType("", "GRADLE", ""),
         )
     private val ksp = Feature("ksp", "KSP", "", "Development Tools", preview = false, community = false)
-    private val selectOptionRetriever = FakeSelectOptionRetriever()
-    private val featureRetriever = FakeFeatureRetriever()
-    private val versionRetriever = FakeVersionRetriever()
+    private val catalog = FakeLaunchCatalog()
     private val timeout = Duration.ofSeconds(1)
-    private val loader = CatalogLoader(selectOptionRetriever, featureRetriever, versionRetriever)
+    private val loader = CatalogLoader(catalog)
 
     @Test
     fun `options are loaded`() {
         expectThat(loader.loadOptions(LaunchServer.SNAPSHOT)).isRight().get { value }.isEqualTo(options)
-        expectThat(selectOptionRetriever.requested).isEqualTo(LaunchServer.SNAPSHOT)
-        expectThat(featureRetriever.requested).isNull()
+        expectThat(catalog.requestedOptions).isEqualTo(LaunchServer.SNAPSHOT)
+        expectThat(catalog.requestedFeatures).isNull()
     }
 
     @Test
     fun `options failure is reported`() {
-        selectOptionRetriever.result = EmptySelectOptionsError("No application types").left()
+        catalog.options = CatalogError("No application types").left()
 
         expectThat(loader.loadOptions(LaunchServer.RELEASE))
             .isLeft()
@@ -74,12 +66,12 @@ class CatalogLoaderTest {
         expectThat(loader.loadFeatures(LaunchServer.SNAPSHOT, cli, kotlin)).isRight().get { value }.isEqualTo(
             listOf(ksp),
         )
-        expectThat(featureRetriever.requested).isEqualTo(Triple(LaunchServer.SNAPSHOT, cli, kotlin))
+        expectThat(catalog.requestedFeatures).isEqualTo(Triple(LaunchServer.SNAPSHOT, cli, kotlin))
     }
 
     @Test
     fun `features failure is reported`() {
-        featureRetriever.result = FeaturesError(500, "Server Error").left()
+        catalog.features = CatalogError("Server Error").left()
 
         expectThat(loader.loadFeatures(LaunchServer.RELEASE, cli, kotlin))
             .isLeft()
@@ -99,14 +91,14 @@ class CatalogLoaderTest {
 
     @Test
     fun `a server whose version can't be read gets its fallback label`() {
-        versionRetriever.results[LaunchServer.SNAPSHOT] = VersionError(null, "Connection refused").left()
+        catalog.versions[LaunchServer.SNAPSHOT] = CatalogError("Connection refused").left()
 
         expectThat(loader.loadVersions(timeout)[1]).isEqualTo(MicronautVersion(LaunchServer.SNAPSHOT, "Snapshot"))
     }
 
     @Test
     fun `a server that doesn't answer in time only loses its own label`() {
-        versionRetriever.hangs = LaunchServer.SNAPSHOT
+        catalog.hangs = LaunchServer.SNAPSHOT
 
         expectThat(loader.loadVersions(Duration.ofMillis(100))).isEqualTo(
             listOf(
@@ -118,45 +110,39 @@ class CatalogLoaderTest {
 
     @Test
     fun `a server whose lookup throws gets its fallback label`() {
-        versionRetriever.throws = LaunchServer.SNAPSHOT
+        catalog.throws = LaunchServer.SNAPSHOT
 
         expectThat(loader.loadVersions(timeout)[1]).isEqualTo(MicronautVersion(LaunchServer.SNAPSHOT, "Snapshot"))
     }
 
-    private class FakeVersionRetriever : VersionRetriever {
+    private inner class FakeLaunchCatalog : LaunchCatalog {
+        var options: Either<CatalogError, SelectOptions> = this@CatalogLoaderTest.options.right()
+        var features: Either<CatalogError, List<Feature>> = listOf(ksp).right()
+        val versions: MutableMap<LaunchServer, Either<CatalogError, String>> =
+            mutableMapOf(LaunchServer.RELEASE to "5.2.2".right(), LaunchServer.SNAPSHOT to "5.2.3-SNAPSHOT".right())
+        var requestedOptions: LaunchServer? = null
+        var requestedFeatures: Triple<LaunchServer, ApplicationType, Language>? = null
         var hangs: LaunchServer? = null
         var throws: LaunchServer? = null
-        val results: MutableMap<LaunchServer, Either<VersionError, String>> =
-            mutableMapOf(LaunchServer.RELEASE to "5.2.2".right(), LaunchServer.SNAPSHOT to "5.2.3-SNAPSHOT".right())
 
-        override fun getMicronautVersion(server: LaunchServer): Either<VersionError, String> {
-            if (server == hangs) Thread.sleep(Duration.ofSeconds(2))
-            check(server != throws) { "Unexpected failure" }
-            return results.getValue(server)
+        override fun getSelectOptions(server: LaunchServer): Either<CatalogError, SelectOptions> {
+            requestedOptions = server
+            return options
         }
-    }
-
-    private inner class FakeSelectOptionRetriever : SelectOptionRetriever {
-        var result: Either<SelectOptionsError, SelectOptions> = options.right()
-        var requested: LaunchServer? = null
-
-        override fun getSelectOptions(server: LaunchServer): Either<SelectOptionsError, SelectOptions> {
-            requested = server
-            return result
-        }
-    }
-
-    private inner class FakeFeatureRetriever : FeatureRetriever {
-        var result: Either<FeaturesError, List<Feature>> = listOf(ksp).right()
-        var requested: Triple<LaunchServer, ApplicationType, Language>? = null
 
         override fun getFeatures(
             server: LaunchServer,
             type: ApplicationType,
             language: Language,
-        ): Either<FeaturesError, List<Feature>> {
-            requested = Triple(server, type, language)
-            return result
+        ): Either<CatalogError, List<Feature>> {
+            requestedFeatures = Triple(server, type, language)
+            return features
+        }
+
+        override fun getMicronautVersion(server: LaunchServer): Either<CatalogError, String> {
+            if (server == hangs) Thread.sleep(Duration.ofSeconds(2))
+            check(server != throws) { "Unexpected failure" }
+            return versions.getValue(server)
         }
     }
 }

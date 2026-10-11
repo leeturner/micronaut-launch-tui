@@ -17,7 +17,6 @@ data class ProjectRejected(
 ) : GenerateProjectError
 
 data class UnexpectedProjectCreationError(
-    val status: Int?,
     override val message: String,
 ) : GenerateProjectError
 

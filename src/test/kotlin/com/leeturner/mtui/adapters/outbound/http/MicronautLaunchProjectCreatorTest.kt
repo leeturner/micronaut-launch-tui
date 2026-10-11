@@ -122,20 +122,18 @@ class MicronautLaunchProjectCreatorTest {
             .isLeft()
             .get { value }
             .isA<UnexpectedProjectCreationError>()
-            .get { status }
-            .isNull()
     }
 
     @Test
-    fun `500 is an unexpected error with its status`() {
+    fun `500 is an unexpected error`() {
         stubCreate("com.example.my-app", WireMock.aResponse().withStatus(500))
 
         expectThat(creator.createProject(options, name("com.example.my-app"), emptyList()))
             .isLeft()
             .get { value }
             .isA<UnexpectedProjectCreationError>()
-            .get { status }
-            .isEqualTo(500)
+            .get { message }
+            .isEqualTo("Client 'micronaut-launch': Server Error")
     }
 
     @Test

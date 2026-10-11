@@ -52,9 +52,9 @@ class MicronautLaunchProjectCreator(
                 if (e.status == HttpStatus.BAD_REQUEST) {
                     raise(ProjectRejected(e.launchMessage() ?: e.status.reason))
                 }
-                raise(UnexpectedProjectCreationError(status = e.status.code, message = e.message ?: "Unknown error"))
+                raise(UnexpectedProjectCreationError(e.message ?: "Unknown error"))
             } catch (e: HttpClientException) {
-                raise(UnexpectedProjectCreationError(status = null, message = e.message ?: "Unknown error"))
+                raise(UnexpectedProjectCreationError(e.message ?: "Unknown error"))
             }
         }
 }
@@ -63,7 +63,7 @@ private fun <T> Raise<GenerateProjectError>.lookup(
     mapping: Map<String, T>,
     what: String,
     value: String,
-): T = mapping[value] ?: raise(UnexpectedProjectCreationError(null, "Unsupported $what: $value"))
+): T = mapping[value] ?: raise(UnexpectedProjectCreationError("Unsupported $what: $value"))
 
 // Launch puts the readable message in _embedded.errors[0].message; the top-level message is just "Bad Request"
 private fun HttpClientResponseException.launchMessage(): String? =
