@@ -340,8 +340,8 @@ paths:
           allOf:
           - $ref: "#/components/schemas/Language"
       - name: javaVersion
-        description: "The jdk version (optional, defaults to MicronautJdkVersionConfiguration#DEFAULT_OPTION)"
         in: query
+        description: "The jdk version (optional, defaults to MicronautJdkVersionConfiguration#DEFAULT_OPTION)"
         explode: false
         schema:
           # mtui patch: upstream refs the JdkVersion object, but Launch takes the enum value, e.g. JDK_21

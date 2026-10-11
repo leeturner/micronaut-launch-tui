@@ -327,6 +327,24 @@ class MicronautLaunchProjectCreatorTest {
     }
 
     @Test
+    fun `preview without contents is an error`() {
+        stubPreview(
+            WireMock
+                .aResponse()
+                .withStatus(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody("{}"),
+        )
+
+        expectThat(creator.previewProject(options, name("com.example.demo"), emptyList()))
+            .isLeft()
+            .get { value }
+            .isA<UnexpectedProjectCreationError>()
+            .get { message }
+            .isEqualTo("Launch returned no files to preview")
+    }
+
+    @Test
     fun `preview goes to the snapshot server when it is chosen`() {
         stubPreview(
             WireMock
