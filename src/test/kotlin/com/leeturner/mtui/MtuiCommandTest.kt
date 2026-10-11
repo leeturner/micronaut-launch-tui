@@ -32,6 +32,23 @@ class MtuiCommandTest {
     }
 
     @Test
+    fun `help describes the open option`() {
+        ApplicationContext.run(CLI, TEST).use { ctx ->
+            val originalOut = System.out
+            val baos = ByteArrayOutputStream()
+            System.setOut(PrintStream(baos))
+
+            try {
+                PicocliRunner.execute(MtuiCommand::class.java, ctx, "--help")
+            } finally {
+                System.setOut(originalOut)
+            }
+
+            expectThat(baos.toString()).contains("--open").contains("MTUI_OPEN")
+        }
+    }
+
+    @Test
     fun `unknown option returns a non-zero exit code`() {
         ApplicationContext.run(CLI, TEST).use { ctx ->
             val exitCode = PicocliRunner.execute(MtuiCommand::class.java, ctx, "--bogus")
