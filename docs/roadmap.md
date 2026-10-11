@@ -23,8 +23,11 @@ and `/` starts a search wherever a list can be searched.
 | 4 | Micronaut version | Done | The version is chosen on the name screen from the release and snapshot Launch servers (`launch` and `snapshot.micronaut.io`, each labelled from `/versions`); changing it reloads the options and features from that server | `/versions` |
 | 5 | Preview | Done | Generated files can be browsed before creating the project, from the name screen or the feature picker; ArchUnit tests guard the ports and adapters boundaries | `/preview/{type}/{name}` |
 | 6 | Open with your command | Done | After creating, the project is opened with a command set by `--open` or `MTUI_OPEN` (e.g. `idea`); with neither set nothing changes | — |
-| 7 | Polish | | Help overlay, themes, remembered preferences, recently used features | — |
+| 7 | Help and README | | `?` shows the current screen's keys in a popup; the README shows what `mtui` is, with screenshots made by committed vhs tapes | — |
 | 8 | Distribution | | Native binaries and a release workflow | — |
 
 Possible later: feature diff (`/diff/{type}/feature/{feature}`), showing what
 adding a feature changes. Spring Initializr has no equivalent.
+
+Also possible later, dropped from slice 7 because they need a settings file:
+themes, remembered preferences and recently used features.
