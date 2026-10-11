@@ -100,7 +100,10 @@ class FileBrowser(
     }
 
     private fun show(target: Int) {
-        index = target.coerceIn(files.indices)
+        val clamped = target.coerceIn(files.indices)
+        // The ends stop rather than wrap, so staying on the same file must not reset its scroll position
+        if (clamped == index) return
+        index = clamped
         lines = file.displayLines()
         top = 0
     }

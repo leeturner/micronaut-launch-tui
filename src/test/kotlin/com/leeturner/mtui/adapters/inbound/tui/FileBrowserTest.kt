@@ -41,12 +41,18 @@ class FileBrowserTest {
     fun `next and previous stop at the ends`() {
         repeat(browser.files.size) { browser.next() }
         expectThat(browser.position).isEqualTo(browser.files.size)
+        browser.scrollBy(5, 1)
+        val scrolled = browser.top
         browser.next()
         expectThat(browser.position).isEqualTo(browser.files.size)
+        expectThat(browser.top).isEqualTo(scrolled)
         repeat(browser.files.size) { browser.previous() }
         expectThat(browser.position).isEqualTo(1)
+        browser.scrollBy(5, 1)
+        val scrolledFirst = browser.top
         browser.previous()
         expectThat(browser.position).isEqualTo(1)
+        expectThat(browser.top).isEqualTo(scrolledFirst)
     }
 
     @Test
