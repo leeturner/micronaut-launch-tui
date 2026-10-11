@@ -11,12 +11,10 @@ import com.leeturner.mtui.domain.core.model.SelectOptions
 import com.leeturner.mtui.domain.core.ports.FeatureRetriever
 import com.leeturner.mtui.domain.core.ports.SelectOptionRetriever
 import com.leeturner.mtui.domain.core.ports.VersionRetriever
-import jakarta.inject.Singleton
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 
-@Singleton
 class CatalogLoader(
     private val selectOptionRetriever: SelectOptionRetriever,
     private val featureRetriever: FeatureRetriever,

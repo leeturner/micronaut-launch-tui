@@ -45,6 +45,7 @@ dependencies {
     testImplementation(libs.strikt.core)
     testImplementation(libs.strikt.arrow)
     testImplementation(libs.wiremock.micronaut)
+    testImplementation(libs.archunit.junit5)
 }
 
 

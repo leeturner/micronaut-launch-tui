@@ -9,10 +9,8 @@ import com.leeturner.mtui.domain.core.model.ProjectName
 import com.leeturner.mtui.domain.core.model.ProjectOptions
 import com.leeturner.mtui.domain.core.ports.ProjectCreator
 import com.leeturner.mtui.domain.core.ports.ProjectWriter
-import jakarta.inject.Singleton
 import java.nio.file.Path
 
-@Singleton
 class ProjectGenerator(
     private val creator: ProjectCreator,
     private val writer: ProjectWriter,
