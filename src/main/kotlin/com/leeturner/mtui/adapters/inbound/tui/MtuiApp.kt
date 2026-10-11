@@ -191,9 +191,10 @@ class MtuiApp(
 
     // Focus stays on the version row, and a failure leaves the form as it was
     private fun switchVersion(version: MicronautVersion) {
+        val chosen = formScreen.form.chosen
         screen = Screen.Form(switchingTo = version)
         background(
-            work = { catalogLoader.switchServer(formScreen.form.chosen, version).mapLeft { it.message } },
+            work = { catalogLoader.switchServer(chosen, version).mapLeft { it.message } },
             onFailure = { (it.message ?: it.toString()).left() },
         ) { loaded ->
             loaded.fold(
@@ -215,9 +216,7 @@ class MtuiApp(
     // Enter can arrive both from the name box and as an unconsumed key, so anything but an idle form is ignored
     private fun submitName() {
         if ((screen as? Screen.Form)?.busy != false) return
-        ProjectName
-            .parse(formScreen.nameInput.text())
-            .mapLeft { it.message }
+        parsedName()
             .fold(
                 { showForm(it) },
                 { name ->
@@ -228,6 +227,8 @@ class MtuiApp(
                 },
             )
     }
+
+    private fun parsedName() = ProjectName.parse(formScreen.nameInput.text()).mapLeft { it.message }
 
     // Features depend only on server, type and language, so the picker is kept as it was left unless one changed
     private fun openPicker(name: ProjectName) {
@@ -259,9 +260,7 @@ class MtuiApp(
 
     // Errors from Launch leave the focus on the option row, so pressing p again retries rather than typing a "p"
     private fun previewFromForm() {
-        ProjectName
-            .parse(formScreen.nameInput.text())
-            .mapLeft { it.message }
+        parsedName()
             .fold(
                 { showForm(it) },
                 { name ->
