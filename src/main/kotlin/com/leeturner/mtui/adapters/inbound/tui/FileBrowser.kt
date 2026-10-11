@@ -18,8 +18,7 @@ class FileBrowser(
 
     val position: Int get() = index + 1
 
-    // lines() rather than split("\n") so CRLF content leaves no '\r' behind
-    var lines: List<String> = file.content.lines()
+    var lines: List<String> = file.displayLines()
         private set
 
     var top: Int = 0
@@ -46,6 +45,32 @@ class FileBrowser(
         visible: Int,
     ) {
         top = (top + lines).coerceIn(0, maxOf(0, this.lines.size - visible))
+    }
+
+    // Long lines wrap onto extra rows rather than being cut off, so copying with the mouse gets the whole line
+    fun rows(
+        width: Int,
+        height: Int,
+    ): List<String> =
+        lines
+            .drop(top)
+            .asSequence()
+            .flatMap { it.chunked(width.coerceAtLeast(1)).ifEmpty { listOf("") } }
+            .take(height)
+            .toList()
+
+    // How many lines from the end fit in height rows once wrapped; passed to scrollBy so the last line can be reached
+    fun linesAtEnd(
+        width: Int,
+        height: Int,
+    ): Int {
+        var rows = 0
+        val fitting =
+            lines.asReversed().takeWhile { line ->
+                rows += (line.length - 1) / width.coerceAtLeast(1) + 1
+                rows <= height
+            }
+        return fitting.size.coerceAtLeast(1)
     }
 
     fun previous() = show(index - 1)
@@ -76,7 +101,11 @@ class FileBrowser(
 
     private fun show(target: Int) {
         index = target.coerceIn(files.indices)
-        lines = file.content.lines()
+        lines = file.displayLines()
         top = 0
     }
 }
+
+// lines() rather than split("\n") so CRLF content leaves no '\r' behind; a tab drawn as-is would garble the screen
+// ponytail: a tab is always 4 spaces, not the next tab stop; fine for the indentation Launch generates
+private fun ProjectFile.displayLines(): List<String> = content.lines().map { it.replace("\t", "    ") }

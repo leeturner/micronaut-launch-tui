@@ -20,6 +20,7 @@ class FileBrowserTest {
                 ProjectFile("gradlew.bat", "@echo off\r\nset X=1\r\n"),
                 ProjectFile("src/main/resources/application.properties", "x=y\n"),
                 ProjectFile("empty.txt", ""),
+                ProjectFile("long.txt", "a\n${"x".repeat(25)}\n\tb"),
             ),
         )
     private val browser = FileBrowser(preview)
@@ -132,5 +133,35 @@ class FileBrowserTest {
         browser.closeList()
         expectThat(browser.listOpen).isFalse()
         expectThat(browser.file.path).isEqualTo("build.gradle.kts")
+    }
+
+    @Test
+    fun `tabs become spaces`() {
+        open("long.txt")
+        expectThat(browser.lines.last()).isEqualTo("    b")
+    }
+
+    @Test
+    fun `long lines wrap onto extra rows`() {
+        open("long.txt")
+        expectThat(browser.rows(10, 10))
+            .isEqualTo(listOf("a", "x".repeat(10), "x".repeat(10), "x".repeat(5), "    b"))
+        expectThat(browser.rows(10, 2)).isEqualTo(listOf("a", "x".repeat(10)))
+    }
+
+    @Test
+    fun `scrolling stops with the last line on screen when lines wrap`() {
+        open("long.txt")
+        val visible = browser.linesAtEnd(10, 4)
+        expectThat(visible).isEqualTo(2)
+        browser.scrollBy(100, visible)
+        expectThat(browser.rows(10, 4).last()).isEqualTo("    b")
+    }
+
+    @Test
+    fun `a line taller than the screen still counts as one visible line`() {
+        open("long.txt")
+        expectThat(browser.linesAtEnd(2, 1)).isEqualTo(1)
+        expectThat(browser.rows(2, 1)).isEqualTo(listOf("a"))
     }
 }
