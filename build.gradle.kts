@@ -121,8 +121,10 @@ graalvmNative {
 
 // mtui --version reads the project version from application.properties
 tasks.processResources {
-  inputs.property("version", project.version)
-  filesMatching("application.properties") { filter { it.replace("@version@", project.version.toString()) } }
+  // Read at configuration time: the configuration cache forbids reaching for project while the task runs
+  val version = project.version.toString()
+  inputs.property("version", version)
+  filesMatching("application.properties") { filter { it.replace("@version@", version) } }
 }
 
 tasks.named<io.micronaut.gradle.docker.MicronautDockerfile>("dockerfile") {
