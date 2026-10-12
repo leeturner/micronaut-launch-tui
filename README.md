@@ -59,9 +59,35 @@ Press `?` on any screen for every key it understands.
 
 ![The help popup](docs/images/help.png)
 
+## Install
+
+Download the archive for your platform from the
+[latest release](https://github.com/leeturner/micronaut-launch-tui/releases/latest):
+
+| Platform | Archive |
+|---|---|
+| macOS (Apple Silicon) | `mtui-<version>-macos-aarch64.tar.gz` |
+| Linux (x86_64) | `mtui-<version>-linux-x86_64.tar.gz` |
+| Windows (x86_64) | `mtui-<version>-windows-x86_64.zip` |
+
+Unpack it and move `mtui` somewhere on your `PATH`:
+
+```bash
+tar -xzf mtui-*-macos-aarch64.tar.gz
+mv mtui /usr/local/bin/
+```
+
+The binary isn't signed. If macOS blocks it, clear the quarantine flag:
+
+```bash
+xattr -d com.apple.quarantine /usr/local/bin/mtui
+```
+
+The Windows binary is built but hasn't been tested on Windows yet.
+
 ## Build and run
 
-You need Java 25. There are no prebuilt downloads yet.
+To run it from source instead, you need Java 25.
 
 ```bash
 ./gradlew shadowJar
@@ -109,6 +135,14 @@ shows all of the current screen's keys.
 ```bash
 ./gradlew build         # tests, Kotlinter and Detekt
 ./gradlew formatKotlin  # fix formatting
+```
+
+To build the native binary, you need GraalVM 25 (Gradle finds it through
+`GRAALVM_HOME` or `JAVA_HOME`). The binary is written to
+`build/native/nativeCompile/mtui`:
+
+```bash
+./gradlew nativeCompile
 ```
 
 The work is planned in slices on the [roadmap](docs/roadmap.md), each with its
