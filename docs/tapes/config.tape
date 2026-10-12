@@ -8,6 +8,6 @@ Set Theme "Catppuccin Mocha"
 
 # mtui runs in a fresh temp directory, so a generated project never lands in the repo
 Hide
-Type `alias mtui="java -jar $PWD/build/libs/micronaut-launch-tui-0.1-all.jar" && cd "$(mktemp -d)" && clear`
+Type `alias mtui="java -jar $PWD/build/libs/micronaut-launch-tui-dev-all.jar" && cd "$(mktemp -d)" && clear`
 Enter
 Show

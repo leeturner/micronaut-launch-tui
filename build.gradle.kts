@@ -12,7 +12,6 @@ plugins {
   alias(libs.plugins.detekt)
 }
 
-version = "0.1"
 group = "com.leeturner.mtui"
 
 repositories {
@@ -107,6 +106,12 @@ tasks.shadowJar {
   manifest {
     attributes("Enable-Native-Access" to "ALL-UNNAMED")
   }
+}
+
+// mtui --version reads the project version from application.properties
+tasks.processResources {
+  inputs.property("version", project.version)
+  filesMatching("application.properties") { filter { it.replace("@version@", project.version.toString()) } }
 }
 
 tasks.named<io.micronaut.gradle.docker.MicronautDockerfile>("dockerfile") {

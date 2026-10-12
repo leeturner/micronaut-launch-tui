@@ -16,6 +16,7 @@ import kotlin.system.exitProcess
     name = "mtui",
     description = ["Create Micronaut projects from the terminal"],
     mixinStandardHelpOptions = true,
+    versionProvider = MtuiVersion::class,
 )
 class MtuiCommand
     @Inject

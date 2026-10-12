@@ -65,7 +65,7 @@ You need Java 25. There are no prebuilt downloads yet.
 
 ```bash
 ./gradlew shadowJar
-java -jar build/libs/micronaut-launch-tui-0.1-all.jar
+java -jar build/libs/micronaut-launch-tui-dev-all.jar
 ```
 
 ### Run it from anywhere
@@ -73,7 +73,7 @@ java -jar build/libs/micronaut-launch-tui-0.1-all.jar
 Add an alias to `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-alias mtui='java -jar /path/to/micronaut-launch-tui/build/libs/micronaut-launch-tui-0.1-all.jar'
+alias mtui='java -jar /path/to/micronaut-launch-tui/build/libs/micronaut-launch-tui-dev-all.jar'
 ```
 
 Then create projects from wherever you keep them. The project is unzipped into
