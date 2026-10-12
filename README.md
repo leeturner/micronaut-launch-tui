@@ -61,7 +61,18 @@ Press `?` on any screen for every key it understands.
 
 ## Install
 
-Download the archive for your platform from the
+With the [GitHub CLI](https://cli.github.com), this installs or updates `mtui`
+in `~/.local/bin` (make sure it's on your `PATH`). On Linux, use
+`'*linux-x86_64*'` as the pattern:
+
+```bash
+mkdir -p ~/.local/bin
+gh release download -R leeturner/micronaut-launch-tui -p '*macos-aarch64*' -O - | tar -xz -C ~/.local/bin
+```
+
+A download made by `gh` isn't quarantined, so macOS doesn't block it.
+
+Or download the archive for your platform from the
 [latest release](https://github.com/leeturner/micronaut-launch-tui/releases/latest):
 
 | Platform | Archive |
