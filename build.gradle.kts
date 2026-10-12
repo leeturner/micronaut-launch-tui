@@ -108,6 +108,17 @@ tasks.shadowJar {
   }
 }
 
+graalvmNative {
+  binaries {
+    named("main") {
+      // The binary is mtui, not the project name
+      imageName = "mtui"
+      // The native-image counterpart of the shadow jar's Enable-Native-Access, for JLine
+      buildArgs.add("--enable-native-access=ALL-UNNAMED")
+    }
+  }
+}
+
 // mtui --version reads the project version from application.properties
 tasks.processResources {
   inputs.property("version", project.version)
