@@ -12,7 +12,6 @@ plugins {
   alias(libs.plugins.detekt)
 }
 
-version = "0.1"
 group = "com.leeturner.mtui"
 
 repositories {
@@ -107,6 +106,25 @@ tasks.shadowJar {
   manifest {
     attributes("Enable-Native-Access" to "ALL-UNNAMED")
   }
+}
+
+graalvmNative {
+  binaries {
+    named("main") {
+      // The binary is mtui, not the project name
+      imageName = "mtui"
+      // The native-image counterpart of the shadow jar's Enable-Native-Access, for JLine
+      buildArgs.add("--enable-native-access=ALL-UNNAMED")
+    }
+  }
+}
+
+// mtui --version reads the project version from application.properties
+tasks.processResources {
+  // Read at configuration time: the configuration cache forbids reaching for project while the task runs
+  val version = project.version.toString()
+  inputs.property("version", version)
+  filesMatching("application.properties") { filter { it.replace("@version@", version) } }
 }
 
 tasks.named<io.micronaut.gradle.docker.MicronautDockerfile>("dockerfile") {

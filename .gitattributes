@@ -1,0 +1,3 @@
+# Windows runners check out with CRLF by default, which breaks gradlew under bash
+/gradlew text eol=lf
+*.bat text eol=crlf

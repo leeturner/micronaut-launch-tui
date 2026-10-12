@@ -24,10 +24,14 @@ and `/` starts a search wherever a list can be searched.
 | 5 | Preview | Done | Generated files can be browsed before creating the project, from the name screen or the feature picker; ArchUnit tests guard the ports and adapters boundaries | `/preview/{type}/{name}` |
 | 6 | Open with your command | Done | After creating, the project is opened with a command set by `--open` or `MTUI_OPEN` (e.g. `idea`); with neither set nothing changes | — |
 | 7 | Help and README | Done | `?` shows the current screen's keys in a popup; the README shows what `mtui` is, with screenshots made by committed vhs tapes | — |
-| 8 | Distribution | | Native binaries and a release workflow | — |
+| 8 | Distribution | Done | Pushing a `v*` tag publishes native `mtui` binaries for macOS arm64, Linux x86_64 and Windows x86_64 to a GitHub Release; `mtui --version` prints the tag's version | — |
 
 Possible later: feature diff (`/diff/{type}/feature/{feature}`), showing what
 adding a feature changes. Spring Initializr has no equivalent.
 
 Also possible later, dropped from slice 7 because they need a settings file:
 themes, remembered preferences and recently used features.
+
+Also possible later, left out of slice 8 to keep distribution simple: a
+Homebrew tap, SDKMAN, macOS signing and notarisation, Linux arm64 and macOS
+Intel builds, and a Linux binary for older glibc (or a static musl build).

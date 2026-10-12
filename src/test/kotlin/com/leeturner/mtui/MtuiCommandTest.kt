@@ -49,6 +49,25 @@ class MtuiCommandTest {
     }
 
     @Test
+    fun `version prints the project version`() {
+        ApplicationContext.run(CLI, TEST).use { ctx ->
+            val originalOut = System.out
+            val baos = ByteArrayOutputStream()
+            System.setOut(PrintStream(baos))
+
+            val exitCode =
+                try {
+                    PicocliRunner.execute(MtuiCommand::class.java, ctx, "--version")
+                } finally {
+                    System.setOut(originalOut)
+                }
+
+            expectThat(exitCode).isEqualTo(0)
+            expectThat(baos.toString().trim()).isEqualTo("dev")
+        }
+    }
+
+    @Test
     fun `unknown option returns a non-zero exit code`() {
         ApplicationContext.run(CLI, TEST).use { ctx ->
             val exitCode = PicocliRunner.execute(MtuiCommand::class.java, ctx, "--bogus")
