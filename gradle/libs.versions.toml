@@ -17,7 +17,7 @@ shadow = "9.6.1"
 strikt = "0.35.1"
 arrow = "2.2.3"
 wiremock-micronaut = "0.2.0"
-tamboui = "0.5.0"
+tamboui = "0.6.0"
 archunit = "1.5.1"
 
 [libraries]
