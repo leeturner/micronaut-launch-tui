@@ -1,6 +1,7 @@
-# mtui
+# Micronaut Launch TUI (mtui)
 
 [![Compile and Build](https://github.com/leeturner/micronaut-launch-tui/actions/workflows/build.yml/badge.svg)](https://github.com/leeturner/micronaut-launch-tui/actions/workflows/build.yml)
+[![Licence](https://img.shields.io/github/license/leeturner/micronaut-launch-tui)](LICENSE)
 
 A terminal UI for creating Micronaut projects through
 [Micronaut Launch](https://launch.micronaut.io), built with
@@ -156,8 +157,7 @@ To build the native binary, you need GraalVM 25 (Gradle finds it through
 ./gradlew nativeCompile
 ```
 
-The work is planned in slices on the [roadmap](docs/roadmap.md), each with its
-own design in [`docs/superpowers/specs`](docs/superpowers/specs).
+What's planned next is on the [roadmap](docs/roadmap.md).
 
 ### Screenshots
 
@@ -169,3 +169,7 @@ whatever it offers on the day. To regenerate them, from the repo root:
 ./gradlew shadowJar
 for tape in docs/tapes/{demo,form,picker,preview,help}.tape; do vhs "$tape"; done
 ```
+
+## Licence
+
+Apache 2.0. See [LICENSE](LICENSE).
