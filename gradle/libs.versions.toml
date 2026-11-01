@@ -4,9 +4,10 @@ kotlin = "2.4.21"
 kapt = "2.4.21"
 
 # Micronaut
-micronaut-version = "5.2.3"
+micronaut-version = "5.2.4"
 micronaut-application = "5.0.2"
 micronaut-openapi = "5.0.2"
+micronaut-openapi-generator = "7.3.0"
 
 # Plugins
 kotlinter = "5.7.0"
@@ -19,6 +20,8 @@ arrow = "2.2.3"
 wiremock-micronaut = "0.2.0"
 tamboui = "0.6.0"
 archunit = "1.5.1"
+jackson2 = "2.22.4"
+guava = "33.7.2-jre"
 
 [libraries]
 
@@ -47,6 +50,12 @@ tamboui-jline3-backend = { module = "dev.tamboui:tamboui-jline3-backend" }
 
 # Arrow
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
+
+# Jackson 2 (OpenAPI generator only)
+jackson2-bom = { module = "com.fasterxml.jackson:jackson-bom", version.ref = "jackson2" }
+
+# Guava (OpenAPI generator only)
+guava-bom = { module = "com.google.guava:guava-bom", version.ref = "guava" }
 
 # Testing
 junit-platform-suite = { module = "org.junit.platform:junit-platform-suite-engine" }

@@ -45,6 +45,10 @@ dependencies {
     testImplementation(libs.strikt.arrow)
     testImplementation(libs.wiremock.micronaut)
     testImplementation(libs.archunit.junit5)
+
+    // The OpenAPI generator is the only thing still on Jackson 2 and Guava; keep them past the open advisories
+    "openApiGeneratorClasspath"(platform(libs.jackson2.bom))
+    "openApiGeneratorClasspath"(platform(libs.guava.bom))
 }
 
 
@@ -75,6 +79,8 @@ micronaut {
         annotations("com.leeturner.mtui.*")
     }
   openapi {
+    // The plugin defaults to an older generator (7.0.0)
+    version.set(libs.versions.micronaut.openapi.generator.get())
     client(file("src/main/openapi/micronaut-launch-5.2.2.yml")) {
       apiPackageName.set("com.leeturner.mtui.adapters.outbound.http.client.api")
       apiNamePrefix.set("MicronautLaunch")
