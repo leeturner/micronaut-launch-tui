@@ -20,6 +20,7 @@ arrow = "2.3.0.1"
 wiremock-micronaut = "0.2.0"
 tamboui = "0.6.0"
 archunit = "1.5.1"
+arrow-detekt-rules = "0.3.0"
 jackson2 = "2.22.4"
 guava = "33.7.2-jre"
 
@@ -63,6 +64,9 @@ strikt-core = { module = "io.strikt:strikt-core", version.ref = "strikt" }
 strikt-arrow = { module = "io.strikt:strikt-arrow", version.ref = "strikt" }
 wiremock-micronaut = { module = "io.github.leeturner:wiremock-micronaut", version.ref = "wiremock-micronaut" }
 archunit-junit5 = { module = "com.tngtech.archunit:archunit-junit5", version.ref = "archunit" }
+
+# Detekt
+arrow-detekt-rules = { module = "io.github.leeturner:arrow-detekt-rules", version.ref = "arrow-detekt-rules" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

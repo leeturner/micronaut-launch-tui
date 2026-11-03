@@ -1,3 +1,4 @@
+import dev.detekt.gradle.Detekt
 import org.jmailen.gradle.kotlinter.tasks.FormatTask
 import org.jmailen.gradle.kotlinter.tasks.LintTask
 
@@ -46,6 +47,8 @@ dependencies {
     testImplementation(libs.wiremock.micronaut)
     testImplementation(libs.archunit.junit5)
 
+    detektPlugins(libs.arrow.detekt.rules)
+
     // The OpenAPI generator is the only thing still on Jackson 2 and Guava; keep them past the open advisories
     "openApiGeneratorClasspath"(platform(libs.jackson2.bom))
     "openApiGeneratorClasspath"(platform(libs.guava.bom))
@@ -70,6 +73,9 @@ detekt {
   config.setFrom(file("config/detekt/detekt.yml"))
   buildUponDefaultConfig = true
 }
+
+// The arrow rules need type resolution, which only detektMain and detektTest have
+tasks.check { dependsOn(tasks.detektMain, tasks.detektTest) }
 
 micronaut {
   version(libs.versions.micronaut.version.get())
@@ -146,5 +152,9 @@ tasks.withType<LintTask> {
 }
 
 tasks.withType<FormatTask> {
+  exclude { it.file.path.contains("build/generated/openapi") }
+}
+
+tasks.withType<Detekt> {
   exclude { it.file.path.contains("build/generated/openapi") }
 }

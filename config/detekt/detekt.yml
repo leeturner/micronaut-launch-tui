@@ -1,7 +1,10 @@
 performance:
   SpreadOperator:
-    excludes: ['**/**Command**']
+    excludes: ['**/**Command**', '**/adapters/inbound/tui/**']
 
 style:
   ForbiddenComment:
     active: false
+  # @InjectWireMock and @Inject fill lateinit fields, which can't be val
+  VarCouldBeVal:
+    ignoreLateinitVar: true

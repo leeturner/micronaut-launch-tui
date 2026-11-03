@@ -61,7 +61,7 @@ class FeaturePickerScreen(
                     .rounded()
                     .length(SELECTED_PANE_WIDTH),
             ).fill(),
-            text(picker.highlighted?.description ?: "").dim().length(1),
+            text(picker.highlighted?.description.orEmpty()).dim().length(1),
             status.length(1),
             text(HINTS).dim().length(1),
         )
@@ -148,7 +148,7 @@ class FeaturePickerScreen(
         fun status(
             error: String?,
             loading: String?,
-        ): StyledElement<*> = if (loading != null) row(spinner(), text(" $loading")) else text(error ?: "").bold()
+        ): StyledElement<*> = if (loading != null) row(spinner(), text(" $loading")) else text(error.orEmpty()).bold()
 
         val HELP =
             Help(
