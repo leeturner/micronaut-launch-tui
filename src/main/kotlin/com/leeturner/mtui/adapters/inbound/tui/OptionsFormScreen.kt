@@ -39,6 +39,7 @@ class OptionsFormScreen(
     private var previewedFrom = OptionRow.entries.first()
 
     // While switching version the rows are dimmed, because they still show the previous server's options
+    @Suppress("LongParameterList")
     fun render(
         error: String?,
         fetching: Boolean,
@@ -60,7 +61,7 @@ class OptionsFormScreen(
                 fetching -> row(spinner(), text(" Fetching features…"))
                 previewing -> row(spinner(), text(" Fetching preview…"))
                 switchingTo != null -> row(spinner(), text(" Loading ${switchingTo.label} options…"))
-                else -> text(error ?: "").bold()
+                else -> text(error.orEmpty()).bold()
             },
             text(""),
             *OptionRow.entries

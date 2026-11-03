@@ -5,6 +5,7 @@ import arrow.core.flatMap
 import arrow.core.left
 import arrow.core.raise.Raise
 import arrow.core.raise.either
+import arrow.core.raise.ensure
 import arrow.core.right
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.leeturner.mtui.adapters.outbound.http.client.api.MicronautLaunchDefaultApi
@@ -91,9 +92,7 @@ class MicronautLaunchProjectCreator(
             try {
                 onServer(options.version.server) { call(params) }
             } catch (e: HttpClientResponseException) {
-                if (e.status == HttpStatus.BAD_REQUEST) {
-                    raise(ProjectRejected(e.launchMessage() ?: e.status.reason))
-                }
+                ensure(e.status != HttpStatus.BAD_REQUEST) { ProjectRejected(e.launchMessage() ?: e.status.reason) }
                 raise(UnexpectedProjectCreationError(e.message ?: "Unknown error"))
             } catch (e: HttpClientException) {
                 raise(UnexpectedProjectCreationError(e.message ?: "Unknown error"))

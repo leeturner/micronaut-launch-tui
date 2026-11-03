@@ -67,44 +67,44 @@ internal fun MicronautLaunchSelectOptions.toSelectOptions(): Either<CatalogError
 private fun MicronautLaunchApplicationTypeInfo.toApplicationType(): Either<CatalogError, ApplicationType> =
     either {
         ApplicationType(
-            title = title ?: "",
+            title = title.orEmpty(),
             name = name,
-            description = description ?: "",
+            description = description.orEmpty(),
             value =
                 value?.value
                     ?: raise(CatalogError("Missing value for application type '$name'")),
-            label = label ?: "",
+            label = label.orEmpty(),
         )
     }
 
 private fun MicronautLaunchJdkVersionInfo.toJdkVersion(): JdkVersion =
     JdkVersion(
-        description = description ?: "",
+        description = description.orEmpty(),
         name = name,
         value = value,
-        label = label ?: "",
+        label = label.orEmpty(),
     )
 
 private fun MicronautLaunchLanguageInfo.toLanguage(): Either<CatalogError, Language> =
     either {
         Language(
-            extension = extension ?: "",
-            description = description ?: "",
+            extension = extension.orEmpty(),
+            description = description.orEmpty(),
             name = name,
             value =
                 value?.value
                     ?: raise(CatalogError("Missing value for language '$name'")),
-            label = label ?: "",
+            label = label.orEmpty(),
             defaults = defaults?.let { LanguageDefaults(test = it.test.value, build = it.build.value) },
         )
     }
 
 private fun MicronautLaunchTestFrameworkInfo.toTestFramework(): TestFramework =
     TestFramework(
-        description = description ?: "",
+        description = description.orEmpty(),
         name = name,
         value = value.value,
-        label = label ?: "",
+        label = label.orEmpty(),
     )
 
 private fun MicronautLaunchBuildToolInfo.toBuildType(): BuildType =
